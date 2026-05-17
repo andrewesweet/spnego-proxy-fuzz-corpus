@@ -1,0 +1,2099 @@
+
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+		<title>proxy: Go Coverage Report</title>
+		<style>
+			body {
+				background: black;
+				color: rgb(80, 80, 80);
+			}
+			body, pre, #legend span {
+				font-family: Menlo, monospace;
+				font-weight: bold;
+			}
+			#topbar {
+				background: black;
+				position: fixed;
+				top: 0; left: 0; right: 0;
+				height: 42px;
+				border-bottom: 1px solid rgb(80, 80, 80);
+			}
+			#content {
+				margin-top: 50px;
+			}
+			#nav, #legend {
+				float: left;
+				margin-left: 10px;
+			}
+			#legend {
+				margin-top: 12px;
+			}
+			#nav {
+				margin-top: 10px;
+			}
+			#legend span {
+				margin: 0 5px;
+			}
+			.cov0 { color: rgb(192, 0, 0) }
+.cov1 { color: rgb(128, 128, 128) }
+.cov2 { color: rgb(116, 140, 131) }
+.cov3 { color: rgb(104, 152, 134) }
+.cov4 { color: rgb(92, 164, 137) }
+.cov5 { color: rgb(80, 176, 140) }
+.cov6 { color: rgb(68, 188, 143) }
+.cov7 { color: rgb(56, 200, 146) }
+.cov8 { color: rgb(44, 212, 149) }
+.cov9 { color: rgb(32, 224, 152) }
+.cov10 { color: rgb(20, 236, 155) }
+
+		</style>
+	</head>
+	<body>
+		<div id="topbar">
+			<div id="nav">
+				<select id="files">
+				
+				<option value="file0">/github/workspace/build-out/src/spnego-proxy/internal/proxy/auth_gokrb5.go (0.0%)</option>
+				
+				<option value="file1">/github/workspace/build-out/src/spnego-proxy/internal/proxy/auth_notdarwin.go (0.0%)</option>
+				
+				<option value="file2">/github/workspace/build-out/src/spnego-proxy/internal/proxy/circuit_breaker.go (0.0%)</option>
+				
+				<option value="file3">/github/workspace/build-out/src/spnego-proxy/internal/proxy/config.go (0.0%)</option>
+				
+				<option value="file4">/github/workspace/build-out/src/spnego-proxy/internal/proxy/connect.go (0.0%)</option>
+				
+				<option value="file5">/github/workspace/build-out/src/spnego-proxy/internal/proxy/dial.go (0.0%)</option>
+				
+				<option value="file6">/github/workspace/build-out/src/spnego-proxy/internal/proxy/direct.go (0.0%)</option>
+				
+				<option value="file7">/github/workspace/build-out/src/spnego-proxy/internal/proxy/errors.go (0.0%)</option>
+				
+				<option value="file8">/github/workspace/build-out/src/spnego-proxy/internal/proxy/errors_proxy.go (0.0%)</option>
+				
+				<option value="file9">/github/workspace/build-out/src/spnego-proxy/internal/proxy/forward.go (0.0%)</option>
+				
+				<option value="file10">/github/workspace/build-out/src/spnego-proxy/internal/proxy/headers.go (0.0%)</option>
+				
+				<option value="file11">/github/workspace/build-out/src/spnego-proxy/internal/proxy/noproxy.go (0.0%)</option>
+				
+				<option value="file12">/github/workspace/build-out/src/spnego-proxy/internal/proxy/response.go (0.0%)</option>
+				
+				<option value="file13">/github/workspace/build-out/src/spnego-proxy/internal/proxy/server.go (0.0%)</option>
+				
+				</select>
+			</div>
+			<div id="legend">
+				<span>not tracked</span>
+			
+				<span class="cov0">not covered</span>
+				<span class="cov8">covered</span>
+			
+			</div>
+		</div>
+		<div id="content">
+		
+		<pre class="file" id="file0" style="display: none">package proxy
+
+import (
+        "bytes"
+        "encoding/base64"
+        "errors"
+        "fmt"
+        "io"
+        "log/slog"
+        "os"
+        "sync"
+
+        "github.com/jcmturner/gokrb5/v8/client"
+        "github.com/jcmturner/gokrb5/v8/config"
+        "github.com/jcmturner/gokrb5/v8/spnego"
+        "golang.org/x/term"
+)
+
+// Gokrb5TokenProvider uses the pure-Go gokrb5 library for SPNEGO token acquisition.
+// This is the fallback path used on non-macOS platforms or when -user is specified.
+//
+// Note: the gokrb5 client retains the password string in memory for the
+// lifetime of the process so it can re-authenticate when the TGT expires.
+// Go does not provide primitives to scrub string-backed memory, so the
+// password cannot be reliably zeroed. Use a keytab instead of a password
+// in environments where this is a concern.
+type Gokrb5TokenProvider struct {
+        krbClient    *client.Client
+        spnegoClient *spnego.SPNEGO
+        mu           sync.Mutex
+}
+
+func getPassword(passwordFile string) ([]byte, error) <span class="cov0" title="0">{
+        if passwordFile == "" </span><span class="cov0" title="0">{
+                stdin := int(os.Stdin.Fd())
+                if !term.IsTerminal(stdin) </span><span class="cov0" title="0">{
+                        return nil, errors.New("no password file specified and stdin is not a terminal")
+                }</span>
+                <span class="cov0" title="0">fmt.Fprint(os.Stderr, "Password: ")
+                password, err := term.ReadPassword(stdin)
+                if err != nil </span><span class="cov0" title="0">{
+                        return nil, fmt.Errorf("failed to read password: %w", err)
+                }</span>
+                <span class="cov0" title="0">fmt.Fprintln(os.Stderr)
+                return password, nil</span>
+        }
+
+        <span class="cov0" title="0">f, err := os.Open(passwordFile) //nolint:gosec // path comes from a CLI flag, not user-controlled input
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("failed to open password file: %w", err)
+        }</span>
+        <span class="cov0" title="0">defer func() </span><span class="cov0" title="0">{ _ = f.Close() }</span>()
+
+        <span class="cov0" title="0">info, err := f.Stat()
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("failed to stat password file: %w", err)
+        }</span>
+        <span class="cov0" title="0">if mode := info.Mode().Perm(); mode&amp;0o077 != 0 </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("password file %s has insecure permissions %04o; must not be accessible by group or others (e.g. 0600)", passwordFile, mode)
+        }</span>
+
+        <span class="cov0" title="0">const maxPasswordFileSize = 4096
+        password, err := io.ReadAll(io.LimitReader(f, maxPasswordFileSize))
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("failed to read password file: %w", err)
+        }</span>
+        <span class="cov0" title="0">return bytes.TrimRight(password, "\r\n"), nil</span>
+}
+
+// NewGokrb5TokenProvider creates a token provider using gokrb5 with password-based auth.
+func NewGokrb5TokenProvider(user, realm, cfgFile, passwordFile, proxy, explicitSPN string, debug bool) (*Gokrb5TokenProvider, error) <span class="cov0" title="0">{
+        if cfgFile == "" || realm == "" </span><span class="cov0" title="0">{
+                return nil, errors.New("-config and -realm are required when using password-based authentication")
+        }</span>
+
+        <span class="cov0" title="0">spnVal := explicitSPN
+        if spnVal == "" </span><span class="cov0" title="0">{
+                spnVal = "HTTP/" + extractHost(proxy)
+                slog.Info("inferred service principal name", "spn", spnVal)
+                slog.Info("if it's not correct use the -spn flag")
+        }</span> else<span class="cov0" title="0"> {
+                spnVal = normalizeSPN(spnVal, '/', '@')
+        }</span>
+
+        <span class="cov0" title="0">cfg, err := config.Load(cfgFile)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("failed to load kerberos config: %w", err)
+        }</span>
+
+        <span class="cov0" title="0">passwd, err := getPassword(passwordFile)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("failed to get password: %w", err)
+        }</span>
+
+        <span class="cov0" title="0">opts := []func(*client.Settings){
+                client.DisablePAFXFAST(true),
+        }
+        if debug </span><span class="cov0" title="0">{
+                opts = append(opts, client.Logger(slog.NewLogLogger(slog.Default().Handler(), slog.LevelDebug)))
+        }</span>
+        <span class="cov0" title="0">cli := client.NewWithPassword(user, realm, string(passwd), cfg, opts...)
+
+        // Zero the password bytes immediately after the Kerberos client has
+        // copied them. string(passwd) creates a copy for the client; this
+        // zeroing reduces the window during which plaintext credentials exist
+        // in process memory (CWE-316).
+        clear(passwd)
+
+        return &amp;Gokrb5TokenProvider{
+                krbClient:    cli,
+                spnegoClient: spnego.SPNEGOClient(cli, spnVal),
+        }, nil</span>
+}
+
+// GetToken acquires a SPNEGO credential and initializes a security context
+// via gokrb5, returning the base64-encoded SPNEGO token. It is safe for
+// concurrent use.
+func (p *Gokrb5TokenProvider) GetToken() (string, error) <span class="cov0" title="0">{
+        p.mu.Lock()
+        defer p.mu.Unlock()
+        if err := p.spnegoClient.AcquireCred(); err != nil </span><span class="cov0" title="0">{
+                return "", &amp;CredentialError{authError{msg: fmt.Sprintf("could not acquire client credential: %v", err), cause: err}}
+        }</span>
+        <span class="cov0" title="0">token, err := p.spnegoClient.InitSecContext()
+        if err != nil </span><span class="cov0" title="0">{
+                return "", &amp;NegotiationError{authError{msg: fmt.Sprintf("could not initialize context: %v", err), cause: err}}
+        }</span>
+        <span class="cov0" title="0">b, err := token.Marshal()
+        if err != nil </span><span class="cov0" title="0">{
+                return "", &amp;NegotiationError{authError{msg: fmt.Sprintf("could not marshal SPNEGO token: %v", err), cause: err}}
+        }</span>
+        <span class="cov0" title="0">return base64.StdEncoding.EncodeToString(b), nil</span>
+}
+
+// Close destroys the underlying gokrb5 client, releasing its session and
+// cached credentials. It is idempotent and safe for concurrent use.
+func (p *Gokrb5TokenProvider) Close() error <span class="cov0" title="0">{
+        p.mu.Lock()
+        defer p.mu.Unlock()
+        if p.krbClient != nil </span><span class="cov0" title="0">{
+                p.krbClient.Destroy()
+                p.krbClient = nil
+        }</span>
+        <span class="cov0" title="0">return nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file1" style="display: none">//go:build !darwin
+
+package proxy
+
+import "errors"
+
+// NewNativeTokenProvider on non-darwin platforms returns an error directing
+// the user to provide explicit credentials for gokrb5 password-based auth.
+func NewNativeTokenProvider(_, _ string) (TokenProvider, error) <span class="cov0" title="0">{
+        return nil, errors.New("native GSS-API is only available on macOS; use -user, -realm, -config, and -password-file for password-based authentication")
+}</span>
+</pre>
+		
+		<pre class="file" id="file2" style="display: none">package proxy
+
+import (
+        "errors"
+        "fmt"
+        "log/slog"
+        "time"
+
+        gobreaker "github.com/sony/gobreaker/v2"
+)
+
+// Default circuit breaker settings.
+const (
+        // CBConsecutiveFailures is the number of consecutive GetToken failures
+        // before the circuit opens. Three failures avoids tripping on a single
+        // transient error while still reacting quickly to broken credentials.
+        CBConsecutiveFailures = 3
+
+        // CBTimeout is how long the circuit stays open before allowing a single
+        // probe request (half-open state). 30 seconds gives the operator time
+        // to notice logs and act (e.g. kinit) without holding the circuit open
+        // so long that recovery is delayed.
+        CBTimeout = 30 * time.Second
+)
+
+// CircuitBreakerTokenProvider wraps a TokenProvider with a circuit breaker
+// that prevents repeated calls to a failing credential backend. This avoids
+// account lockout from rapid authentication failures (e.g. stale Kerberos
+// tickets triggering KDC password-attempt counters).
+type CircuitBreakerTokenProvider struct {
+        inner     TokenProvider
+        cb        *gobreaker.CircuitBreaker[string]
+        threshold uint32
+}
+
+// NewCircuitBreakerTokenProvider wraps the given TokenProvider with a circuit
+// breaker. When threshold consecutive GetToken calls fail, the circuit opens
+// and immediately rejects further attempts for timeout. After the timeout, a
+// single probe request is allowed through (half-open); if it succeeds the
+// circuit closes, otherwise it reopens.
+func NewCircuitBreakerTokenProvider(inner TokenProvider, threshold uint32, timeout time.Duration) *CircuitBreakerTokenProvider <span class="cov0" title="0">{
+        settings := gobreaker.Settings{
+                Name:        "spnego-token",
+                MaxRequests: 1,
+                Timeout:     timeout,
+                ReadyToTrip: func(counts gobreaker.Counts) bool </span><span class="cov0" title="0">{
+                        return counts.ConsecutiveFailures &gt;= threshold
+                }</span>,
+                OnStateChange: func(name string, from gobreaker.State, to gobreaker.State) <span class="cov0" title="0">{
+                        slog.Warn("circuit breaker state change", "name", name, "from", from.String(), "to", to.String())
+                }</span>,
+        }
+        <span class="cov0" title="0">cb := gobreaker.NewCircuitBreaker[string](settings)
+        return &amp;CircuitBreakerTokenProvider{inner: inner, cb: cb, threshold: threshold}</span>
+}
+
+// newCircuitBreakerTokenProvider is the internal constructor that accepts
+// explicit gobreaker.Settings, used by tests to override timeouts.
+func newCircuitBreakerTokenProvider(inner TokenProvider, settings gobreaker.Settings, threshold uint32) *CircuitBreakerTokenProvider <span class="cov0" title="0">{
+        cb := gobreaker.NewCircuitBreaker[string](settings)
+        return &amp;CircuitBreakerTokenProvider{inner: inner, cb: cb, threshold: threshold}
+}</span>
+
+// CircuitBreakerError indicates that the circuit breaker rejected a request.
+// The Unwrap method returns the underlying gobreaker sentinel so callers can
+// further distinguish open vs half-open states with errors.Is if needed.
+type CircuitBreakerError struct{ authError }
+
+// GetToken acquires a token from the wrapped provider, subject to circuit
+// breaker policy. Returns a *CircuitBreakerError when the circuit is open
+// or half-open, allowing callers to distinguish circuit breaker rejections
+// from other token acquisition failures using errors.As.
+func (p *CircuitBreakerTokenProvider) GetToken() (string, error) <span class="cov0" title="0">{
+        token, err := p.cb.Execute(func() (string, error) </span><span class="cov0" title="0">{
+                return p.inner.GetToken()
+        }</span>)
+        <span class="cov0" title="0">if err != nil </span><span class="cov0" title="0">{
+                var msg string
+                switch </span>{
+                case errors.Is(err, gobreaker.ErrOpenState):<span class="cov0" title="0">
+                        msg = fmt.Sprintf("circuit breaker open: token acquisition disabled after %d consecutive failures", p.threshold)</span>
+                case errors.Is(err, gobreaker.ErrTooManyRequests):<span class="cov0" title="0">
+                        msg = "circuit breaker half-open: probe in progress, rejecting concurrent request"</span>
+                default:<span class="cov0" title="0">
+                        return "", err</span>
+                }
+                <span class="cov0" title="0">return "", &amp;CircuitBreakerError{authError{msg: msg, cause: err}}</span>
+        }
+        <span class="cov0" title="0">return token, nil</span>
+}
+
+// Close delegates to the wrapped provider.
+func (p *CircuitBreakerTokenProvider) Close() error <span class="cov0" title="0">{
+        return p.inner.Close()
+}</span>
+</pre>
+		
+		<pre class="file" id="file3" style="display: none">package proxy
+
+import (
+        "fmt"
+        "log/slog"
+        "net"
+        "slices"
+        "strings"
+        "sync"
+        "time"
+)
+
+// LogLevel is the dynamic log level for the proxy's slog handler; it
+// defaults to Info and can be raised to Debug via the -debug flag.
+var LogLevel = new(slog.LevelVar) // default Info
+
+// ConnectPortWildcard is the sentinel value meaning "allow all ports" in the
+// -connect-ports flag and connectPortAllowed logic.
+const ConnectPortWildcard = "*"
+
+// copyBufPool pools 32 KiB buffers used by idleCopy to avoid a heap
+// allocation on every tunnel connection.
+var copyBufPool = sync.Pool{New: func() any <span class="cov0" title="0">{ b := make([]byte, 32*1024); return &amp;b }</span>}
+
+// normalizeSPN converts an explicit SPN between GSS-API hostbased format
+// (service@host) and Kerberos principal format (service/host) so the user
+// need not know which backend is active. targetSep is the separator the
+// active backend expects ('@' for GSS-API, '/' for gokrb5); alternateSep
+// is the other backend's separator.
+func normalizeSPN(spn string, targetSep, alternateSep byte) string <span class="cov0" title="0">{
+        if strings.IndexByte(spn, targetSep) &gt;= 0 </span><span class="cov0" title="0">{
+                return spn // already contains the target separator
+        }</span>
+        <span class="cov0" title="0">if i := strings.IndexByte(spn, alternateSep); i &gt;= 0 </span><span class="cov0" title="0">{
+                return spn[:i] + string(targetSep) + spn[i+1:]
+        }</span>
+        <span class="cov0" title="0">return spn</span> // no recognized separator; return as-is
+}
+
+// ForwardingConfig controls which forwarding headers the proxy injects into
+// outbound requests.
+//
+// Both fields default to false (disabled) to preserve the existing behaviour
+// where no forwarding headers are added. Operators opt in via CLI flags.
+type ForwardingConfig struct {
+        // ForwardedEnabled enables the RFC 7239 Forwarded header (H1).
+        // The header uses an obfuscated identifier for the client address.
+        ForwardedEnabled bool
+
+        // XForwardedForEnabled enables the de-facto X-Forwarded-For header (H2)
+        // and, when the headers are absent, also sets X-Forwarded-Proto (H3) and
+        // X-Forwarded-Host (H4).
+        XForwardedForEnabled bool
+}
+
+// Config groups the non-connection parameters for handleClient.
+type Config struct {
+        Upstream     string
+        Provider     TokenProvider
+        Pseudonym    string
+        DialTimeout  time.Duration
+        ReadTimeout  time.Duration
+        KeepAlive    time.Duration
+        IdleTimeout  time.Duration
+        ConnectPorts []string
+        AllowedIPs   []*net.IPNet
+        NoProxy      *NoProxyMatcher
+        Forwarding   ForwardingConfig
+        UpstreamTLS  UpstreamTLSConfig
+}
+
+// TokenProvider acquires SPNEGO tokens for proxy authentication.
+type TokenProvider interface {
+        // GetToken returns a base64-encoded SPNEGO token.
+        GetToken() (string, error)
+        // Close cleans up any resources.
+        Close() error
+}
+
+// SplitCSV splits a comma-separated string into trimmed, non-empty tokens.
+func SplitCSV(s string) []string <span class="cov0" title="0">{
+        var out []string
+        for part := range strings.SplitSeq(s, ",") </span><span class="cov0" title="0">{
+                if part = strings.TrimSpace(part); part != "" </span><span class="cov0" title="0">{
+                        out = append(out, part)
+                }</span>
+        }
+        <span class="cov0" title="0">return out</span>
+}
+
+// ParseAllowList parses a comma-separated string of IPs and CIDR ranges
+// into a slice of *net.IPNet entries for use with ipAllowed.
+func ParseAllowList(s string) ([]*net.IPNet, error) <span class="cov0" title="0">{
+        if s == "" </span><span class="cov0" title="0">{
+                return nil, nil
+        }</span>
+        <span class="cov0" title="0">var nets []*net.IPNet
+        for _, entry := range SplitCSV(s) </span><span class="cov0" title="0">{
+                if strings.Contains(entry, "/") </span><span class="cov0" title="0">{
+                        _, ipNet, err := net.ParseCIDR(entry)
+                        if err != nil </span><span class="cov0" title="0">{
+                                return nil, fmt.Errorf("invalid CIDR %q: %w", entry, err)
+                        }</span>
+                        <span class="cov0" title="0">nets = append(nets, ipNet)</span>
+                } else<span class="cov0" title="0"> {
+                        ip := net.ParseIP(entry)
+                        if ip == nil </span><span class="cov0" title="0">{
+                                return nil, fmt.Errorf("invalid IP address: %q", entry)
+                        }</span>
+                        <span class="cov0" title="0">bits := 32
+                        if ip.To4() == nil </span><span class="cov0" title="0">{
+                                bits = 128
+                        }</span>
+                        <span class="cov0" title="0">nets = append(nets, &amp;net.IPNet{IP: ip, Mask: net.CIDRMask(bits, bits)})</span>
+                }
+        }
+        <span class="cov0" title="0">return nets, nil</span>
+}
+
+// ipAllowed returns true if the given IP is in the allow list.
+// A nil or empty allow list permits all IPs.
+func ipAllowed(ip net.IP, allowList []*net.IPNet) bool <span class="cov0" title="0">{
+        if len(allowList) == 0 </span><span class="cov0" title="0">{
+                return true
+        }</span>
+        // RFC 4291: an IPv4-mapped IPv6 address denotes the same host as the bare
+        // IPv4 address. Canonicalise to the 4-byte form so allowlist identity is
+        // consistent regardless of which form the client connected with.
+        <span class="cov0" title="0">if v4 := ip.To4(); v4 != nil </span><span class="cov0" title="0">{
+                ip = v4
+        }</span>
+        <span class="cov0" title="0">for _, n := range allowList </span><span class="cov0" title="0">{
+                if n.Contains(ip) </span><span class="cov0" title="0">{
+                        return true
+                }</span>
+        }
+        <span class="cov0" title="0">return false</span>
+}
+
+// connectPortAllowed reports whether port is in the allowed set.
+// An empty allowedPorts slice means all ports are permitted.
+func connectPortAllowed(port string, allowedPorts []string) bool <span class="cov0" title="0">{
+        return len(allowedPorts) == 0 || slices.ContainsFunc(allowedPorts, func(p string) bool </span><span class="cov0" title="0">{ return p == ConnectPortWildcard || p == port }</span>)
+}
+</pre>
+		
+		<pre class="file" id="file4" style="display: none">package proxy
+
+import (
+        "bufio"
+        "errors"
+        "io"
+        "log/slog"
+        "net"
+        "net/http"
+        "sync"
+        "syscall"
+        "time"
+)
+
+// enableKeepAlive enables TCP keepalive on conn with the given period.
+// Non-TCP connections (e.g. net.Pipe in tests) are silently skipped.
+func enableKeepAlive(conn net.Conn, period time.Duration) <span class="cov0" title="0">{
+        if tc, ok := conn.(*net.TCPConn); ok </span><span class="cov0" title="0">{
+                _ = tc.SetKeepAlive(true)
+                _ = tc.SetKeepAlivePeriod(period)
+        }</span>
+}
+
+// closeWrite calls CloseWrite on conn if the underlying type supports it.
+// This signals the remote peer that no more data will be sent on this half
+// of the connection, allowing it to read EOF and finish gracefully.
+func closeWrite(conn net.Conn) <span class="cov0" title="0">{
+        if cw, ok := conn.(interface{ CloseWrite() error }); ok </span><span class="cov0" title="0">{
+                _ = cw.CloseWrite()
+        }</span>
+}
+
+// idleCopy copies from src to dst, resetting the read deadline on srcConn
+// after each successful read. If no data arrives within timeout, the read
+// fails with a deadline error and the copy returns. A zero timeout disables
+// the idle check and falls back to plain io.Copy.
+func idleCopy(dst net.Conn, src io.Reader, srcConn net.Conn, timeout time.Duration) (int64, error) <span class="cov0" title="0">{
+        if timeout &lt;= 0 </span><span class="cov0" title="0">{
+                return io.Copy(dst, src)
+        }</span>
+        <span class="cov0" title="0">bufp := copyBufPool.Get().(*[]byte)
+        defer copyBufPool.Put(bufp)
+        buf := *bufp
+        var total int64
+        for </span><span class="cov0" title="0">{
+                _ = srcConn.SetReadDeadline(time.Now().Add(timeout))
+                n, readErr := src.Read(buf)
+                if n &gt; 0 </span><span class="cov0" title="0">{
+                        nw, writeErr := dst.Write(buf[:n])
+                        total += int64(nw)
+                        if writeErr != nil </span><span class="cov0" title="0">{
+                                return total, writeErr
+                        }</span>
+                }
+                <span class="cov0" title="0">if readErr != nil </span><span class="cov0" title="0">{
+                        _ = srcConn.SetReadDeadline(time.Time{}) // clear deadline
+                        return total, readErr
+                }</span>
+        }
+}
+
+// isExpectedCloseError reports whether err is a normal connection-teardown
+// error that does not warrant ERROR-level logging. EOF, broken pipe,
+// connection reset, and use-of-closed-connection are all routine in proxy
+// forwarding — one side simply closed first.
+func isExpectedCloseError(err error) bool <span class="cov0" title="0">{
+        if errors.Is(err, io.EOF) || errors.Is(err, net.ErrClosed) </span><span class="cov0" title="0">{
+                return true
+        }</span>
+        <span class="cov0" title="0">if errors.Is(err, syscall.ECONNRESET) || errors.Is(err, syscall.EPIPE) </span><span class="cov0" title="0">{
+                return true
+        }</span>
+        <span class="cov0" title="0">return false</span>
+}
+
+// forwardHalf copies data from src to dst, calling CloseWrite on dst when
+// done. It logs the start, completion, and any errors. Callers use
+// wg.Go to launch forwardHalf so the WaitGroup is managed automatically.
+// When idleTimeout &gt; 0, idleCopy is used with srcConn to enforce an idle
+// deadline; otherwise plain io.Copy is used and srcConn may be nil.
+func forwardHalf(dst net.Conn, src io.Reader, srcConn net.Conn, fromAddr, toAddr net.Addr, idleTimeout time.Duration) <span class="cov0" title="0">{
+        defer closeWrite(dst)
+        slog.Debug("forward start", "from", fromAddr, "to", toAddr)
+        defer slog.Debug("forward done", "from", fromAddr, "to", toAddr)
+        var err error
+        if idleTimeout &gt; 0 </span><span class="cov0" title="0">{
+                _, err = idleCopy(dst, src, srcConn, idleTimeout)
+        }</span> else<span class="cov0" title="0"> {
+                _, err = io.Copy(dst, src)
+        }</span>
+        <span class="cov0" title="0">if err != nil </span><span class="cov0" title="0">{
+                if isExpectedCloseError(err) </span><span class="cov0" title="0">{
+                        slog.Debug("forward closed", "error", err, "from", fromAddr, "to", toAddr)
+                }</span> else<span class="cov0" title="0"> {
+                        slog.Error("forward error", "error", err, "from", fromAddr, "to", toAddr)
+                }</span>
+        }
+}
+
+// handleConnectTunnel manages the CONNECT tunnel lifecycle per RFC 9110 §9.3.6.
+// It reads the upstream response before forwarding any client payload (D6),
+// relays the response to the client (D7), and then starts bidirectional
+// forwarding only after a 2xx is confirmed.
+func handleConnectTunnel(conn, proxyConn net.Conn, reqReader *bufio.Reader, req *http.Request, pseudonym, clientAddr string, idleTimeout time.Duration) <span class="cov0" title="0">{
+        upstreamReader := bufio.NewReader(proxyConn)
+        resp, err := readUpstreamResponse(upstreamReader, req, pseudonym) //nolint:bodyclose // S3: resp.Body is the raw tunnel stream; closing it would shut down the TCP connection we forward below.
+        if err != nil </span><span class="cov0" title="0">{
+                handleUpstreamResponseError(conn, proxyConn, err, clientAddr)
+                return
+        }</span>
+
+        // D7 (RFC 9110 §9.3.6): relay the upstream's actual response to the
+        // client. We never synthesise our own 2xx here.
+        <span class="cov0" title="0">if resp.StatusCode &lt; 200 || resp.StatusCode &gt;= 300 </span><span class="cov0" title="0">{
+                // Upstream rejected the CONNECT — forward the full response
+                // including any rejection body (e.g. HTML error page).
+                // Non-2xx is terminal, so Content-Length/Connection are fine.
+                // Connection is cleaned up by deferred conn.Close() in
+                // handleClient (D5).
+                if err := resp.Write(conn); err != nil </span><span class="cov0" title="0">{
+                        if isExpectedCloseError(err) </span><span class="cov0" title="0">{
+                                slog.Debug("forward closed", "error", err, "from", proxyConn.RemoteAddr(), "to", conn.RemoteAddr())
+                        }</span> else<span class="cov0" title="0"> {
+                                slog.Error("forward error", "error", err, "from", proxyConn.RemoteAddr(), "to", conn.RemoteAddr())
+                        }</span>
+                }
+                <span class="cov0" title="0">slog.Debug("upstream rejected CONNECT", "status", resp.StatusCode, "client_addr", clientAddr)
+                return</span>
+        }
+
+        // For 2xx CONNECT responses, write a raw status line instead of using
+        // resp.Write, which emits Content-Length: 0 and Connection: close —
+        // headers that cause Bun/undici clients to close the connection before
+        // the TLS handshake through the tunnel can begin.
+        <span class="cov0" title="0">if err := writeConnectOK(conn, resp); err != nil </span><span class="cov0" title="0">{
+                if isExpectedCloseError(err) </span><span class="cov0" title="0">{
+                        slog.Debug("forward closed", "error", err, "from", proxyConn.RemoteAddr(), "to", conn.RemoteAddr())
+                }</span> else<span class="cov0" title="0"> {
+                        slog.Error("forward error", "error", err, "from", proxyConn.RemoteAddr(), "to", conn.RemoteAddr())
+                }</span>
+                <span class="cov0" title="0">return</span>
+        }
+
+        <span class="cov0" title="0">slog.Debug("CONNECT tunnel established", "client_addr", clientAddr, "upstream_addr", proxyConn.RemoteAddr())
+        var wg sync.WaitGroup
+        wg.Go(func() </span><span class="cov0" title="0">{
+                forwardHalf(proxyConn, reqReader, conn, conn.RemoteAddr(), proxyConn.RemoteAddr(), idleTimeout)
+        }</span>)
+        <span class="cov0" title="0">wg.Go(func() </span><span class="cov0" title="0">{
+                forwardHalf(conn, upstreamReader, proxyConn, proxyConn.RemoteAddr(), conn.RemoteAddr(), idleTimeout)
+        }</span>)
+        <span class="cov0" title="0">wg.Wait()</span>
+}
+</pre>
+		
+		<pre class="file" id="file5" style="display: none">package proxy
+
+import (
+        "crypto/tls"
+        "crypto/x509"
+        "fmt"
+        "net"
+        "os"
+)
+
+// extractHost returns the host portion of addr, stripping any port suffix.
+// If addr has no port, it is returned unchanged.
+func extractHost(addr string) string <span class="cov0" title="0">{
+        if h, _, err := net.SplitHostPort(addr); err == nil </span><span class="cov0" title="0">{
+                return h
+        }</span>
+        <span class="cov0" title="0">return addr</span>
+}
+
+// UpstreamTLSConfig holds optional TLS settings for the upstream proxy connection.
+type UpstreamTLSConfig struct {
+        Enabled            bool
+        CAFile             string
+        InsecureSkipVerify bool
+        // TLSConfig is the pre-built *tls.Config constructed once at startup.
+        // dialUpstream clones it and sets ServerName per connection.
+        // Call buildTLSConfig to populate it from the other fields.
+        TLSConfig *tls.Config
+        // Dialer is the pre-allocated net.Dialer constructed once at startup.
+        Dialer *net.Dialer
+}
+
+// BuildTLSConfig constructs a *tls.Config from the fields of UpstreamTLSConfig
+// and stores it in TLSConfig. It is called once at startup (and in tests) so
+// that dialUpstream can clone the result without re-reading the CA file per connection.
+func (c *UpstreamTLSConfig) BuildTLSConfig() error <span class="cov0" title="0">{
+        tc := &amp;tls.Config{MinVersion: tls.VersionTLS12}
+        if c.CAFile != "" </span><span class="cov0" title="0">{
+                caCert, err := os.ReadFile(c.CAFile)
+                if err != nil </span><span class="cov0" title="0">{
+                        return fmt.Errorf("failed to read upstream CA file: %w", err)
+                }</span>
+                <span class="cov0" title="0">pool := x509.NewCertPool()
+                if !pool.AppendCertsFromPEM(caCert) </span><span class="cov0" title="0">{
+                        return fmt.Errorf("failed to parse upstream CA certificate from %s", c.CAFile)
+                }</span>
+                <span class="cov0" title="0">tc.RootCAs = pool</span>
+        }
+        <span class="cov0" title="0">if c.InsecureSkipVerify </span><span class="cov0" title="0">{
+                tc.InsecureSkipVerify = true //nolint:gosec // user explicitly opted in via -upstream-tls-insecure
+        }</span>
+        <span class="cov0" title="0">c.TLSConfig = tc
+        return nil</span>
+}
+
+// dialUpstream connects to the upstream proxy, optionally using TLS.
+// tlsCfg.Dialer must be non-nil; it is pre-allocated at startup by main().
+func dialUpstream(addr string, tlsCfg UpstreamTLSConfig) (net.Conn, error) <span class="cov0" title="0">{
+        dialer := tlsCfg.Dialer
+        if dialer == nil </span><span class="cov0" title="0">{
+                dialer = &amp;net.Dialer{}
+        }</span>
+        <span class="cov0" title="0">if !tlsCfg.Enabled </span><span class="cov0" title="0">{
+                return dialer.Dial("tcp", addr)
+        }</span>
+
+        <span class="cov0" title="0">var tc *tls.Config
+        if tlsCfg.TLSConfig != nil </span><span class="cov0" title="0">{
+                tc = tlsCfg.TLSConfig.Clone()
+        }</span> else<span class="cov0" title="0"> {
+                tc = &amp;tls.Config{MinVersion: tls.VersionTLS12} //nolint:gosec // fallback for tests without pre-built config
+        }</span>
+        <span class="cov0" title="0">tc.ServerName = extractHost(addr)
+
+        return tls.DialWithDialer(dialer, "tcp", addr, tc)</span>
+}
+</pre>
+		
+		<pre class="file" id="file6" style="display: none">package proxy
+
+import (
+        "bufio"
+        "errors"
+        "io"
+        "log/slog"
+        "net"
+        "net/http"
+        "strings"
+        "sync"
+        "time"
+)
+
+// stripIPv6Brackets removes one surrounding "[]" pair from a bare bracketed
+// IPv6 literal that has no port (e.g. "[::1]" -&gt; "::1"). It is a no-op for any
+// other input. Used on host-canonicalisation paths where net.SplitHostPort has
+// already failed (no port present).
+func stripIPv6Brackets(host string) string <span class="cov0" title="0">{
+        if strings.HasPrefix(host, "[") &amp;&amp; strings.HasSuffix(host, "]") </span><span class="cov0" title="0">{
+                return host[1 : len(host)-1]
+        }</span>
+        <span class="cov0" title="0">return host</span>
+}
+
+// sameHost reports whether two HTTP Host values refer to the same
+// target. It canonicalises by lower-casing and applying defaultPort when a
+// host has no explicit port. Bracketed IPv6 addresses without a port (e.g.
+// "[::1]") are normalised to "[::1]:&lt;defaultPort&gt;" so they match the same
+// IPv6 address written with an explicit port.
+func sameHost(a, b, defaultPort string) bool <span class="cov0" title="0">{
+        canon := func(h string) string </span><span class="cov0" title="0">{
+                h = strings.ToLower(strings.TrimSpace(h))
+                host, port, err := net.SplitHostPort(h)
+                if err != nil </span><span class="cov0" title="0">{
+                        host = h
+                        port = defaultPort
+                        // Strip brackets so net.JoinHostPort below re-adds them once.
+                        host = stripIPv6Brackets(host)
+                }</span>
+                <span class="cov0" title="0">return net.JoinHostPort(host, port)</span>
+        }
+        <span class="cov0" title="0">return canon(a) == canon(b)</span>
+}
+
+// dialDirect dials a target host directly, defaulting to defaultPort when
+// the host has no explicit port. Used by both noproxy bypass paths.
+func dialDirect(host, defaultPort string, timeout time.Duration) (net.Conn, string, error) <span class="cov0" title="0">{
+        target := host
+        if _, _, err := net.SplitHostPort(target); err != nil </span><span class="cov0" title="0">{
+                target = net.JoinHostPort(target, defaultPort)
+        }</span>
+        <span class="cov0" title="0">dialer := net.Dialer{Timeout: timeout}
+        conn, err := dialer.Dial("tcp", target)
+        return conn, target, err</span>
+}
+
+// handleDialError logs and responds to a failed direct dial attempt.
+func handleDialError(conn net.Conn, err error, target, clientAddr, path string) <span class="cov0" title="0">{
+        var ne net.Error
+        if errors.As(err, &amp;ne) &amp;&amp; ne.Timeout() </span><span class="cov0" title="0">{
+                slog.Error("noproxy direct dial timeout", "error", err, "target", target, "client_addr", clientAddr, "path", path)
+                writeHTTPError(conn, errConnectionTimeout)
+        }</span> else<span class="cov0" title="0"> {
+                slog.Error("noproxy direct dial failed", "error", err, "target", target, "client_addr", clientAddr, "path", path)
+                writeHTTPError(conn, errConnectionRefused)
+        }</span>
+}
+
+// handleDirectHTTP forwards an HTTP request directly to the target host,
+// bypassing the upstream proxy. Used for noproxy bypass of non-CONNECT
+// requests. The request is converted from absolute-URI (proxy form) to
+// origin form.
+//
+// The function runs a keep-alive loop bound to the original target host.
+// Subsequent pipelined requests are re-parsed and validated; requests for
+// a different host are rejected with errMismatchedTarget so a smuggled
+// second request cannot ride the existing direct TCP connection to a
+// target it was never authorised for.
+func handleDirectHTTP(conn net.Conn, req *http.Request, reqReader *bufio.Reader, cfg Config, clientAddr string) <span class="cov0" title="0">{
+        targetConn, target, err := dialDirect(req.Host, "80", cfg.DialTimeout)
+        if err != nil </span><span class="cov0" title="0">{
+                handleDialError(conn, err, target, clientAddr, "HTTP")
+                return
+        }</span>
+        <span class="cov0" title="0">defer func() </span><span class="cov0" title="0">{ _ = targetConn.Close() }</span>()
+
+        <span class="cov0" title="0">if cfg.KeepAlive &gt; 0 </span><span class="cov0" title="0">{
+                enableKeepAlive(conn, cfg.KeepAlive)
+                enableKeepAlive(targetConn, cfg.KeepAlive)
+        }</span>
+
+        <span class="cov0" title="0">boundHost := req.Host
+        upstreamReader := bufio.NewReader(targetConn)
+
+        for iter := 0; ; iter++ </span><span class="cov0" title="0">{
+                if iter &gt; 0 </span><span class="cov0" title="0">{
+                        _ = conn.SetReadDeadline(time.Now().Add(cfg.ReadTimeout))
+                        nextReq, rerr := http.ReadRequest(reqReader)
+                        _ = conn.SetReadDeadline(time.Time{})
+                        if rerr != nil </span><span class="cov0" title="0">{
+                                slog.Debug("noproxy keep-alive loop ended", "error", rerr, "target", target, "iter", iter, "client_addr", clientAddr)
+                                return
+                        }</span>
+                        <span class="cov0" title="0">proceed, pe := prepareForwardRequest(conn, nextReq, cfg, clientAddr)
+                        if !proceed </span><span class="cov0" title="0">{
+                                if pe != nil </span><span class="cov0" title="0">{
+                                        writeHTTPError(conn, pe)
+                                }</span>
+                                <span class="cov0" title="0">return</span>
+                        }
+                        // A direct TCP connection is bound to a single target host;
+                        // reject pipelined requests for any other host.
+                        <span class="cov0" title="0">if !sameHost(nextReq.Host, boundHost, "80") </span><span class="cov0" title="0">{
+                                slog.Warn("noproxy pipelined request targets different host", "bound_host", boundHost, "request_host", nextReq.Host, "client_addr", clientAddr)
+                                writeHTTPError(conn, errMismatchedTarget)
+                                return
+                        }</span>
+                        // CONNECT on a plain-HTTP direct connection: cannot tunnel
+                        // on a connection used for HTTP responses.
+                        <span class="cov0" title="0">if nextReq.Method == http.MethodConnect </span><span class="cov0" title="0">{
+                                slog.Warn("noproxy pipelined CONNECT on HTTP connection", "client_addr", clientAddr)
+                                writeHTTPError(conn, errMismatchedTarget)
+                                return
+                        }</span>
+                        <span class="cov0" title="0">injectVia(nextReq.Header, nextReq.Proto, cfg.Pseudonym)
+                        req = nextReq</span>
+                }
+
+                // Write request in origin form (not proxy form).
+                <span class="cov0" title="0">if err := req.Write(targetConn); err != nil </span><span class="cov0" title="0">{
+                        if isExpectedCloseError(err) </span><span class="cov0" title="0">{
+                                slog.Debug("noproxy write request closed", "error", err, "target", target, "client_addr", clientAddr)
+                        }</span> else<span class="cov0" title="0"> {
+                                slog.Error("noproxy write request failed", "error", err, "target", target, "client_addr", clientAddr)
+                        }</span>
+                        <span class="cov0" title="0">writeHTTPError(conn, errConnectionTerminated)
+                        return</span>
+                }
+
+                <span class="cov0" title="0">slog.Debug("noproxy HTTP response forwarding start", "target", target, "client_addr", clientAddr, "iter", iter)
+                resp, rerr := http.ReadResponse(upstreamReader, req)
+                if rerr != nil </span><span class="cov0" title="0">{
+                        if isExpectedCloseError(rerr) </span><span class="cov0" title="0">{
+                                slog.Debug("noproxy read response closed", "error", rerr, "target", target, "client_addr", clientAddr)
+                        }</span> else<span class="cov0" title="0"> {
+                                slog.Error("noproxy read response failed", "error", rerr, "target", target, "client_addr", clientAddr)
+                        }</span>
+                        <span class="cov0" title="0">return</span>
+                }
+                <span class="cov0" title="0">injectVia(resp.Header, resp.Proto, cfg.Pseudonym)
+                writeErr := resp.Write(conn)
+                if writeErr != nil </span><span class="cov0" title="0">{
+                        _ = resp.Body.Close()
+                        if isExpectedCloseError(writeErr) </span><span class="cov0" title="0">{
+                                slog.Debug("noproxy forward response closed", "error", writeErr, "target", target, "client_addr", clientAddr)
+                        }</span> else<span class="cov0" title="0"> {
+                                slog.Error("noproxy forward response failed", "error", writeErr, "target", target, "client_addr", clientAddr)
+                        }</span>
+                        <span class="cov0" title="0">return</span>
+                }
+                <span class="cov0" title="0">_, _ = io.Copy(io.Discard, resp.Body)
+                _ = resp.Body.Close()
+                slog.Debug("noproxy HTTP response forwarding done", "target", target, "client_addr", clientAddr, "iter", iter)
+
+                if connectionWillClose(req, resp) </span><span class="cov0" title="0">{
+                        return
+                }</span>
+        }
+}
+
+// handleDirectConnect establishes a direct TCP tunnel to the target host,
+// bypassing the upstream proxy. Used for noproxy bypass of CONNECT requests.
+// Via is injected on the 200 response (not on req.Header, which is never
+// forwarded for CONNECT tunnels).
+func handleDirectConnect(conn net.Conn, req *http.Request, reqReader *bufio.Reader, cfg Config, clientAddr string) <span class="cov0" title="0">{
+        targetConn, target, err := dialDirect(req.Host, "443", cfg.DialTimeout)
+        if err != nil </span><span class="cov0" title="0">{
+                handleDialError(conn, err, target, clientAddr, "CONNECT")
+                return
+        }</span>
+        <span class="cov0" title="0">defer func() </span><span class="cov0" title="0">{ _ = targetConn.Close() }</span>()
+
+        <span class="cov0" title="0">resp := &amp;http.Response{
+                StatusCode: http.StatusOK,
+                ProtoMajor: 1,
+                ProtoMinor: 1,
+                Header:     make(http.Header),
+        }
+        injectVia(resp.Header, req.Proto, cfg.Pseudonym)
+        if err := writeConnectOK(conn, resp); err != nil </span><span class="cov0" title="0">{
+                if isExpectedCloseError(err) </span><span class="cov0" title="0">{
+                        slog.Debug("noproxy CONNECT response write closed", "error", err, "target", target, "client_addr", clientAddr)
+                }</span> else<span class="cov0" title="0"> {
+                        slog.Error("noproxy CONNECT response write failed", "error", err, "target", target, "client_addr", clientAddr)
+                }</span>
+                <span class="cov0" title="0">return</span>
+        }
+
+        <span class="cov0" title="0">if cfg.KeepAlive &gt; 0 </span><span class="cov0" title="0">{
+                enableKeepAlive(conn, cfg.KeepAlive)
+                enableKeepAlive(targetConn, cfg.KeepAlive)
+        }</span>
+
+        <span class="cov0" title="0">slog.Debug("noproxy CONNECT tunnel established", "target", target, "client_addr", clientAddr)
+        var wg sync.WaitGroup
+        wg.Go(func() </span><span class="cov0" title="0">{
+                forwardHalf(targetConn, reqReader, conn, conn.RemoteAddr(), targetConn.RemoteAddr(), cfg.IdleTimeout)
+        }</span>)
+        <span class="cov0" title="0">wg.Go(func() </span><span class="cov0" title="0">{
+                forwardHalf(conn, bufio.NewReader(targetConn), targetConn, targetConn.RemoteAddr(), conn.RemoteAddr(), cfg.IdleTimeout)
+        }</span>)
+        <span class="cov0" title="0">wg.Wait()</span>
+}
+</pre>
+		
+		<pre class="file" id="file7" style="display: none">package proxy
+
+// authError is a shared base for authentication-related errors. It carries a
+// human-readable message and an optional wrapped cause. Embedding authError
+// into a concrete error type gives that type Error() and Unwrap() for free.
+type authError struct {
+        msg   string
+        cause error
+}
+
+// Error returns the human-readable message for the authentication error.
+func (e *authError) Error() string <span class="cov0" title="0">{ return e.msg }</span>
+
+// Unwrap returns the wrapped cause, if any, for use with errors.Is/As.
+func (e *authError) Unwrap() error <span class="cov0" title="0">{ return e.cause }</span>
+
+// CredentialError indicates that token acquisition failed because Kerberos
+// credentials are expired, missing, or otherwise unavailable. Callers can
+// detect this with errors.As to return a targeted "refresh credentials"
+// message. The Unwrap method preserves the original error for debugging.
+type CredentialError struct{ authError }
+
+// NegotiationError indicates that SPNEGO/Kerberos negotiation failed after
+// credentials were available — typically a misconfigured SPN, unreachable
+// KDC, or a token marshalling failure. Callers can detect this with
+// errors.As to return a targeted "check configuration" message.
+type NegotiationError struct{ authError }
+</pre>
+		
+		<pre class="file" id="file8" style="display: none">package proxy
+
+import (
+        "errors"
+        "fmt"
+        "io"
+        "log/slog"
+        "net"
+        "net/http"
+        "strings"
+)
+
+// proxyError describes a structured error response that the proxy sends to
+// clients. Each field maps to part of the human-readable body format:
+//
+//        spnego-proxy error: &lt;errorType&gt;
+//
+//        &lt;message&gt;
+//
+//        Suggested action: &lt;action&gt;
+type proxyError struct {
+        statusCode int    // HTTP status code (e.g. 502, 504)
+        errorType  string // RFC 9209 Proxy-Status token
+        message    string // human-readable description
+        action     string // suggested remediation
+}
+
+// body renders the structured plain-text response body.
+func (e *proxyError) body() string <span class="cov0" title="0">{
+        if e.action == "" </span><span class="cov0" title="0">{
+                return fmt.Sprintf("spnego-proxy error: %s\n\n%s\n", e.errorType, e.message)
+        }</span>
+        <span class="cov0" title="0">return fmt.Sprintf("spnego-proxy error: %s\n\n%s\n\nSuggested action: %s\n", e.errorType, e.message, e.action)</span>
+}
+
+// RFC 9209 Proxy-Status error type tokens.
+const (
+        errorTypeConnectionTimeout    = "connection_timeout"
+        errorTypeConnectionRefused    = "connection_refused"
+        errorTypeConnectionTerminated = "connection_terminated"
+        errorTypeProxyInternalError   = "proxy_internal_error"
+        errorTypeHTTPRequestError     = "http_request_error"
+        errorTypeProxyLoopDetected    = "proxy_loop_detected"
+        errorTypeHTTPProtocolError    = "http_protocol_error"
+        errorTypeHTTPRequestDenied    = "http_request_denied"
+)
+
+// Pre-defined proxy errors for each scenario the proxy can encounter.
+var (
+        errConnectionTimeout = &amp;proxyError{
+                statusCode: http.StatusGatewayTimeout,
+                errorType:  errorTypeConnectionTimeout,
+                message:    "The proxy timed out connecting to the upstream proxy.",
+                action:     "Verify the upstream proxy address and that it is reachable from this host. Check for network connectivity issues or firewall rules.",
+        }
+        errConnectionRefused = &amp;proxyError{
+                statusCode: http.StatusBadGateway,
+                errorType:  errorTypeConnectionRefused,
+                message:    "The upstream proxy refused the connection.",
+                action:     "Verify the upstream proxy is running and listening on the configured address. Check firewall rules and network connectivity.",
+        }
+        errTokenAcquisition = &amp;proxyError{
+                statusCode: http.StatusBadGateway,
+                errorType:  errorTypeProxyInternalError,
+                message:    "The proxy failed to acquire a SPNEGO authentication token.",
+                action:     "Check Kerberos credentials. Run 'klist' to verify a valid ticket exists, or 'kinit' to obtain a new one.",
+        }
+        errCredentialFailure = &amp;proxyError{
+                statusCode: http.StatusBadGateway,
+                errorType:  errorTypeProxyInternalError,
+                message:    "Kerberos credentials are expired or unavailable.",
+                action:     "Run 'kinit' to obtain or refresh Kerberos credentials, then retry. Run 'klist' to check current ticket status.",
+        }
+        errNegotiationFailure = &amp;proxyError{
+                statusCode: http.StatusBadGateway,
+                errorType:  errorTypeProxyInternalError,
+                message:    "SPNEGO negotiation with the KDC failed.",
+                action:     "Check the service principal name (-spn flag) and Kerberos realm configuration. Verify the KDC is reachable.",
+        }
+        errCircuitBreakerOpen = &amp;proxyError{
+                statusCode: http.StatusBadGateway,
+                errorType:  errorTypeProxyInternalError,
+                message:    "Token acquisition is temporarily disabled after repeated failures (circuit breaker open).",
+                action:     "The proxy will automatically retry after a cooldown period. Check Kerberos credentials and the KDC. Run 'klist' to verify ticket status.",
+        }
+        errHTTPRequestError = &amp;proxyError{
+                statusCode: http.StatusBadRequest,
+                errorType:  errorTypeHTTPRequestError,
+                message:    "The proxy could not read or parse the HTTP request.",
+                action:     "Verify the client is sending a well-formed HTTP request to the proxy.",
+        }
+        errConnectionTerminated = &amp;proxyError{
+                statusCode: http.StatusBadGateway,
+                errorType:  errorTypeConnectionTerminated,
+                message:    "The connection to the upstream proxy was lost while relaying the request.",
+                action:     "The upstream proxy may have closed the connection unexpectedly. Retry the request.",
+        }
+        errProxyLoopDetected = &amp;proxyError{
+                statusCode: http.StatusBadGateway,
+                errorType:  errorTypeProxyLoopDetected,
+                message:    "A routing loop was detected: the request has already passed through this proxy instance.",
+                action:     "Check the proxy chain configuration for circular routing. The Via header in the request contains this proxy's identity.",
+        }
+        errInvalidContentLength = &amp;proxyError{
+                statusCode: http.StatusBadGateway,
+                errorType:  errorTypeHTTPProtocolError,
+                message:    "The upstream proxy sent a response with an invalid Content-Length header.",
+                action:     "This may indicate a misconfigured upstream proxy or an attempt at response splitting. Contact the upstream proxy administrator.",
+        }
+        errMalformedResponseHeader = &amp;proxyError{
+                statusCode: http.StatusBadGateway,
+                errorType:  errorTypeHTTPProtocolError,
+                message:    "The upstream proxy sent a response containing a header field with a malformed name or a forbidden control character in its value.",
+                action:     "This may indicate a misconfigured upstream proxy or an attempt at response splitting. Contact the upstream proxy administrator.",
+        }
+        errForbiddenPort = &amp;proxyError{
+                statusCode: http.StatusForbidden,
+                errorType:  errorTypeHTTPRequestDenied,
+                message:    "CONNECT to the requested port is not allowed.",
+                action:     "The proxy restricts CONNECT tunneling to specific ports. Contact the proxy administrator.",
+        }
+        errUnparseableResponse = &amp;proxyError{
+                statusCode: http.StatusBadGateway,
+                errorType:  errorTypeHTTPProtocolError,
+                message:    "The upstream proxy sent a response that could not be parsed as valid HTTP.",
+                action:     "This may indicate a misconfigured upstream proxy. Contact the upstream proxy administrator.",
+        }
+        errClientDenied = &amp;proxyError{
+                statusCode: http.StatusForbidden,
+                errorType:  errorTypeHTTPRequestDenied,
+                message:    "Client IP is not in the allowlist.",
+                action:     "Contact the proxy administrator to add your IP to the -allowed-ips list.",
+        }
+        errMismatchedTarget = &amp;proxyError{
+                statusCode: http.StatusBadRequest,
+                errorType:  errorTypeHTTPRequestDenied,
+                message:    "Pipelined request is incompatible with the existing direct connection.",
+                action:     "Open a new connection to the proxy and retry.",
+        }
+)
+
+// writeHTTPError sends a structured HTTP error response to the client with an
+// RFC 9209 Proxy-Status header indicating the error type. It is best-effort;
+// write failures are silently ignored because the connection is about to be
+// closed.
+func writeHTTPError(conn net.Conn, pe *proxyError) <span class="cov0" title="0">{
+        body := pe.body()
+        // RFC 9209 Proxy-Status header with RFC 8941 Structured Fields syntax.
+        header := http.Header{
+                "Content-Type": {"text/plain; charset=utf-8"},
+                "Connection":   {"close"},
+                "Proxy-Status": {"spnego-proxy; error=" + pe.errorType},
+        }
+
+        resp := &amp;http.Response{
+                StatusCode:    pe.statusCode,
+                ProtoMajor:    1,
+                ProtoMinor:    1,
+                Header:        header,
+                Body:          io.NopCloser(strings.NewReader(body)),
+                ContentLength: int64(len(body)),
+        }
+        _ = resp.Write(conn)
+}</span>
+
+// tokenErrorToProxyError maps a GetToken error to the most specific proxyError
+// sentinel, falling back to errTokenAcquisition for unrecognised errors.
+func tokenErrorToProxyError(err error) *proxyError <span class="cov0" title="0">{
+        var cbErr *CircuitBreakerError
+        var credErr *CredentialError
+        var negErr *NegotiationError
+        switch </span>{
+        case errors.As(err, &amp;cbErr):<span class="cov0" title="0">
+                return errCircuitBreakerOpen</span>
+        case errors.As(err, &amp;credErr):<span class="cov0" title="0">
+                return errCredentialFailure</span>
+        case errors.As(err, &amp;negErr):<span class="cov0" title="0">
+                return errNegotiationFailure</span>
+        default:<span class="cov0" title="0">
+                return errTokenAcquisition</span>
+        }
+}
+
+// handleUpstreamResponseError handles errors from readUpstreamResponse.
+// For invalid Content-Length or malformed response headers it sends a 502
+// error to the client; for all other errors it falls back to raw-relaying
+// the upstream bytes.
+func handleUpstreamResponseError(conn, proxyConn net.Conn, err error, clientAddr string) <span class="cov0" title="0">{
+        if errors.Is(err, errContentLengthInvalid) </span><span class="cov0" title="0">{
+                slog.Error("invalid Content-Length in upstream response",
+                        "error", err, "error_type", errInvalidContentLength.errorType,
+                        "client_addr", clientAddr,
+                        "upstream_addr", proxyConn.RemoteAddr())
+                writeHTTPError(conn, errInvalidContentLength)
+                return
+        }</span>
+        <span class="cov0" title="0">if errors.Is(err, errMalformedResponse) </span><span class="cov0" title="0">{
+                slog.Error("malformed upstream response header",
+                        "error", err, "error_type", errMalformedResponseHeader.errorType,
+                        "client_addr", clientAddr,
+                        "upstream_addr", proxyConn.RemoteAddr())
+                writeHTTPError(conn, errMalformedResponseHeader)
+                return
+        }</span>
+        <span class="cov0" title="0">slog.Warn("unparseable upstream response",
+                "error", err, "error_type", errUnparseableResponse.errorType,
+                "client_addr", clientAddr,
+                "upstream_addr", proxyConn.RemoteAddr())
+        writeHTTPError(conn, errUnparseableResponse)</span>
+}
+</pre>
+		
+		<pre class="file" id="file9" style="display: none">package proxy
+
+import (
+        "bufio"
+        "errors"
+        "io"
+        "log/slog"
+        "net"
+        "net/http"
+        "strconv"
+        "strings"
+        "time"
+)
+
+// prepareForwardRequest runs the per-request validation pipeline shared by
+// every iteration of the client-facing keep-alive loop (issue #215). It
+// performs, in order: Via loop detection, CONNECT port allowlist,
+// Max-Forwards decrement (with local response for the terminal case), and
+// hop-by-hop header sanitisation.
+//
+// Return values:
+//   - proceed=true, pe=nil      → forward the request.
+//   - proceed=false, pe=nil     → proxy already wrote a local response
+//     (Max-Forwards: 0); caller should stop reading further requests.
+//   - proceed=false, pe!=nil    → reject; caller must writeHTTPError(pe)
+//     and stop reading further requests.
+//
+// Noproxy matching and forwarding-header injection are NOT performed here;
+// they are caller-side routing decisions that vary by call site.
+func prepareForwardRequest(conn net.Conn, req *http.Request, cfg Config, clientAddr string) (proceed bool, pe *proxyError) <span class="cov0" title="0">{
+        // RFC 9110 §7.6.3: loop detection must run BEFORE sanitizeHopByHop so
+        // that a client sending "Connection: Via" cannot strip Via and bypass
+        // the check.
+        if prior := req.Header.Get("Via"); prior != "" &amp;&amp; strings.Contains(prior, cfg.Pseudonym) </span><span class="cov0" title="0">{
+                slog.Warn("proxy loop detected", "via", prior, "pseudonym", cfg.Pseudonym, "client_addr", clientAddr, "method", req.Method, "host", req.Host)
+                return false, errProxyLoopDetected
+        }</span>
+
+        // D4 (RFC 9110 §9.3.6): restrict CONNECT to allowed ports.
+        <span class="cov0" title="0">if req.Method == http.MethodConnect &amp;&amp; len(cfg.ConnectPorts) &gt; 0 </span><span class="cov0" title="0">{
+                _, port, err := net.SplitHostPort(req.Host)
+                if err != nil </span><span class="cov0" title="0">{
+                        slog.Debug("CONNECT host has no explicit port, defaulting to 443", "host", req.Host, "error", err, "client_addr", clientAddr)
+                        port = "443"
+                }</span>
+                <span class="cov0" title="0">if !connectPortAllowed(port, cfg.ConnectPorts) </span><span class="cov0" title="0">{
+                        slog.Warn("CONNECT port not allowed", "host", req.Host, "port", port, "client_addr", clientAddr)
+                        return false, errForbiddenPort
+                }</span>
+        }
+
+        // G1 (RFC 9110 §7.6.2): TRACE/OPTIONS Max-Forwards.
+        <span class="cov0" title="0">if req.Method == http.MethodTrace || req.Method == http.MethodOptions </span><span class="cov0" title="0">{
+                if mf := req.Header.Get("Max-Forwards"); mf != "" </span><span class="cov0" title="0">{
+                        n, err := strconv.Atoi(mf)
+                        switch </span>{
+                        case err != nil:<span class="cov0" title="0">
+                                slog.Debug("non-numeric Max-Forwards value, forwarding unmodified", "max_forwards", mf, "client_addr", clientAddr)</span>
+                        case n &lt;= 0:<span class="cov0" title="0">
+                                slog.Debug("Max-Forwards: 0, responding locally", "method", req.Method, "client_addr", clientAddr)
+                                writeMaxForwardsResponse(conn, req)
+                                return false, nil</span>
+                        default:<span class="cov0" title="0">
+                                req.Header.Set("Max-Forwards", strconv.Itoa(n-1))</span>
+                        }
+                }
+        }
+
+        // Hop-by-hop sanitisation (RFC 9110 §7.6.1) — runs on every
+        // iteration so a smuggled Proxy-Authorization cannot ride an
+        // already-authenticated upstream connection.
+        <span class="cov0" title="0">sanitizeHopByHop(req)
+        return true, nil</span>
+}
+
+// connectionWillClose reports whether either side has signalled that the
+// connection should not be reused after the current request/response
+// exchange. RFC 9112 §9.3 forbids persistent connections with HTTP/1.0
+// clients even when they send "Connection: Keep-Alive"; the stdlib's
+// req.Close / resp.Close flags cover the other cases (Connection: close
+// on either side, HTTP/1.0 without keep-alive).
+func connectionWillClose(req *http.Request, resp *http.Response) bool <span class="cov0" title="0">{
+        if req.ProtoMajor == 1 &amp;&amp; req.ProtoMinor == 0 </span><span class="cov0" title="0">{
+                return true
+        }</span>
+        <span class="cov0" title="0">return req.Close || resp.Close</span>
+}
+
+// dialAndAuthUpstream acquires a SPNEGO token, sets Proxy-Authorization on
+// req, dials the upstream proxy, and enables TCP keepalive on both
+// sockets when configured. On any failure it writes a proxyError to conn
+// and returns nil. Returns the open upstream connection on success.
+func dialAndAuthUpstream(conn net.Conn, req *http.Request, cfg Config, clientAddr string) net.Conn <span class="cov0" title="0">{
+        token, terr := cfg.Provider.GetToken()
+        if terr != nil </span><span class="cov0" title="0">{
+                pe := tokenErrorToProxyError(terr)
+                slog.Error("failed to get SPNEGO token", "error", terr, "error_type", pe.errorType, "client_addr", clientAddr, "upstream_addr", cfg.Upstream, "method", req.Method, "host", req.Host)
+                writeHTTPError(conn, pe)
+                return nil
+        }</span>
+        <span class="cov0" title="0">req.Header.Set("Proxy-Authorization", "Negotiate "+token)
+
+        proxyConn, derr := dialUpstream(cfg.Upstream, cfg.UpstreamTLS)
+        if derr != nil </span><span class="cov0" title="0">{
+                var ne net.Error
+                if errors.As(derr, &amp;ne) &amp;&amp; ne.Timeout() </span><span class="cov0" title="0">{
+                        slog.Error("failed to connect to proxy", "error", derr, "error_type", errConnectionTimeout.errorType, "client_addr", clientAddr, "upstream_addr", cfg.Upstream)
+                        writeHTTPError(conn, errConnectionTimeout)
+                }</span> else<span class="cov0" title="0"> {
+                        slog.Error("failed to connect to proxy", "error", derr, "error_type", errConnectionRefused.errorType, "client_addr", clientAddr, "upstream_addr", cfg.Upstream)
+                        writeHTTPError(conn, errConnectionRefused)
+                }</span>
+                <span class="cov0" title="0">return nil</span>
+        }
+        <span class="cov0" title="0">if cfg.KeepAlive &gt; 0 </span><span class="cov0" title="0">{
+                enableKeepAlive(conn, cfg.KeepAlive)
+                enableKeepAlive(proxyConn, cfg.KeepAlive)
+        }</span>
+        <span class="cov0" title="0">return proxyConn</span>
+}
+
+// handleClient handles a single client connection. cfg groups all
+// non-connection parameters including upstream address, token provider,
+// timeouts, CONNECT port restrictions (D4, RFC 9110 §9.3.6), and
+// forwarding header injection (RFC 7239 Forwarded, X-Forwarded-For, etc.).
+func handleClient(conn net.Conn, cfg Config) <span class="cov0" title="0">{
+        defer func() </span><span class="cov0" title="0">{ _ = conn.Close() }</span>()
+        // Half-close the write half before the full close so the client
+        // reads EOF on the response stream rather than receiving a RST that
+        // could discard buffered response bytes (issue #75). Deferred AFTER
+        // conn.Close so it runs FIRST (LIFO order).
+        <span class="cov0" title="0">defer closeWrite(conn)
+        if cfg.Pseudonym == "" </span><span class="cov0" title="0">{
+                slog.Error("empty pseudonym in ProxyConfig, refusing connection", "client_addr", conn.RemoteAddr())
+                return
+        }</span>
+        <span class="cov0" title="0">clientAddr := conn.RemoteAddr().String()
+
+        // Check IP allowlist before processing anything.
+        if len(cfg.AllowedIPs) &gt; 0 </span><span class="cov0" title="0">{
+                clientHost := extractHost(clientAddr)
+                if !ipAllowed(net.ParseIP(clientHost), cfg.AllowedIPs) </span><span class="cov0" title="0">{
+                        slog.Warn("client IP not in allowlist", "client_addr", clientAddr)
+                        writeHTTPError(conn, errClientDenied)
+                        // Drain any unread client data so the kernel can perform a
+                        // graceful FIN-based close rather than sending a TCP RST.
+                        // A RST would discard the server's send buffer, causing the
+                        // client to receive a truncated error response.
+                        _ = conn.SetReadDeadline(time.Now().Add(time.Second))
+                        _, _ = io.Copy(io.Discard, conn)
+                        return
+                }</span>
+        }
+
+        <span class="cov0" title="0">slog.Debug("new client", "client_addr", clientAddr)
+        defer slog.Debug("stop processing request", "client_addr", clientAddr)
+
+        reqReader := bufio.NewReader(conn)
+
+        var proxyConn net.Conn
+        var upstreamReader *bufio.Reader
+        defer func() </span><span class="cov0" title="0">{
+                if proxyConn != nil </span><span class="cov0" title="0">{
+                        _ = proxyConn.Close()
+                }</span>
+        }()
+
+        <span class="cov0" title="0">for iter := 0; ; iter++ </span><span class="cov0" title="0">{
+                _ = conn.SetReadDeadline(time.Now().Add(cfg.ReadTimeout))
+                req, err := http.ReadRequest(reqReader)
+                _ = conn.SetReadDeadline(time.Time{})
+                if err != nil </span><span class="cov0" title="0">{
+                        if iter == 0 </span><span class="cov0" title="0">{
+                                if isExpectedCloseError(err) </span><span class="cov0" title="0">{
+                                        slog.Debug("client connection closed before request", "error", err, "client_addr", clientAddr)
+                                }</span> else<span class="cov0" title="0"> {
+                                        slog.Error("failed to read request", "error", err, "error_type", errHTTPRequestError.errorType, "client_addr", clientAddr)
+                                        writeHTTPError(conn, errHTTPRequestError)
+                                }</span>
+                        } else<span class="cov0" title="0"> {
+                                slog.Debug("keep-alive loop ended", "error", err, "iter", iter, "client_addr", clientAddr)
+                        }</span>
+                        <span class="cov0" title="0">return</span>
+                }
+
+                <span class="cov0" title="0">proceed, pe := prepareForwardRequest(conn, req, cfg, clientAddr)
+                if !proceed </span><span class="cov0" title="0">{
+                        if pe != nil </span><span class="cov0" title="0">{
+                                writeHTTPError(conn, pe)
+                        }</span>
+                        <span class="cov0" title="0">return</span>
+                }
+
+                // Noproxy bypass — direct dial to the target. Terminates the
+                // keep-alive loop because the authenticated upstream connection
+                // (if any) cannot serve a direct-dial request.
+                <span class="cov0" title="0">matched, pattern := false, ""
+                if cfg.NoProxy != nil </span><span class="cov0" title="0">{
+                        matched, pattern = cfg.NoProxy.Match(req.Host)
+                }</span>
+                <span class="cov0" title="0">if matched </span><span class="cov0" title="0">{
+                        slog.Debug("noproxy bypass", "host", req.Host, "pattern", pattern, "method", req.Method, "client_addr", clientAddr)
+                        if req.Method == http.MethodConnect </span><span class="cov0" title="0">{
+                                handleDirectConnect(conn, req, reqReader, cfg, clientAddr)
+                        }</span> else<span class="cov0" title="0"> {
+                                injectVia(req.Header, req.Proto, cfg.Pseudonym)
+                                handleDirectHTTP(conn, req, reqReader, cfg, clientAddr)
+                        }</span>
+                        <span class="cov0" title="0">return</span>
+                }
+
+                // CONNECT via upstream proxy — tunnel mode terminates the loop.
+                // A CONNECT request always dials a fresh upstream connection
+                // because a tunnel co-opts the connection for opaque bytes; it
+                // cannot share with prior HTTP responses on the keep-alive
+                // connection.
+                <span class="cov0" title="0">if req.Method == http.MethodConnect </span><span class="cov0" title="0">{
+                        forwardConnectViaUpstream(conn, req, reqReader, cfg, clientAddr)
+                        return
+                }</span>
+
+                // Plain HTTP through upstream proxy. Lazy-dial on the first
+                // non-CONNECT, non-noproxy request; reuse the SPNEGO-authenticated
+                // connection on subsequent requests (RFC 4559 §5).
+                <span class="cov0" title="0">injectForwardingHeaders(req, clientAddr, cfg.Forwarding)
+                if proxyConn == nil </span><span class="cov0" title="0">{
+                        proxyConn = dialAndAuthUpstream(conn, req, cfg, clientAddr)
+                        if proxyConn == nil </span><span class="cov0" title="0">{
+                                return
+                        }</span>
+                        <span class="cov0" title="0">upstreamReader = bufio.NewReader(proxyConn)</span>
+                }
+                <span class="cov0" title="0">injectVia(req.Header, req.Proto, cfg.Pseudonym)
+
+                slog.Debug("proxy request", "method", req.Method, "uri", req.RequestURI, "proto", req.Proto, "headers", len(req.Header), "client_addr", clientAddr, "upstream_addr", cfg.Upstream, "via", req.Header.Get("Via"), "iter", iter)
+                if err := req.WriteProxy(proxyConn); err != nil </span><span class="cov0" title="0">{
+                        slog.Error("failed to write request to proxy", "error", err, "error_type", errConnectionTerminated.errorType, "client_addr", clientAddr, "upstream_addr", cfg.Upstream, "method", req.Method, "host", req.Host)
+                        writeHTTPError(conn, errConnectionTerminated)
+                        return
+                }</span>
+
+                <span class="cov0" title="0">resp, err := readUpstreamResponse(upstreamReader, req, cfg.Pseudonym)
+                if err != nil </span><span class="cov0" title="0">{
+                        handleUpstreamResponseError(conn, proxyConn, err, clientAddr)
+                        return
+                }</span>
+
+                <span class="cov0" title="0">writeErr := resp.Write(conn)
+                if writeErr != nil </span><span class="cov0" title="0">{
+                        _ = resp.Body.Close()
+                        if isExpectedCloseError(writeErr) </span><span class="cov0" title="0">{
+                                slog.Debug("forward closed", "error", writeErr, "from", proxyConn.RemoteAddr(), "to", conn.RemoteAddr())
+                        }</span> else<span class="cov0" title="0"> {
+                                slog.Error("forward error", "error", writeErr, "from", proxyConn.RemoteAddr(), "to", conn.RemoteAddr())
+                        }</span>
+                        <span class="cov0" title="0">return</span>
+                }
+                // Drain any unread body so upstreamReader is aligned for the
+                // next iteration; resp.Write already consumed it for well-framed
+                // responses.
+                <span class="cov0" title="0">_, _ = io.Copy(io.Discard, resp.Body)
+                _ = resp.Body.Close()
+
+                if connectionWillClose(req, resp) </span><span class="cov0" title="0">{
+                        return
+                }</span>
+        }
+}
+
+// forwardConnectViaUpstream performs the CONNECT-via-upstream-proxy flow:
+// inject forwarding headers, acquire a SPNEGO token, dial a FRESH upstream
+// connection, send the CONNECT request, and hand off to handleConnectTunnel.
+// A fresh connection is required because a CONNECT tunnel co-opts the
+// entire upstream connection for opaque bytes; it must not share with
+// prior keep-alive HTTP traffic on the same socket.
+func forwardConnectViaUpstream(conn net.Conn, req *http.Request, reqReader *bufio.Reader, cfg Config, clientAddr string) <span class="cov0" title="0">{
+        injectForwardingHeaders(req, clientAddr, cfg.Forwarding)
+
+        proxyConn := dialAndAuthUpstream(conn, req, cfg, clientAddr)
+        if proxyConn == nil </span><span class="cov0" title="0">{
+                return
+        }</span>
+        <span class="cov0" title="0">defer func() </span><span class="cov0" title="0">{ _ = proxyConn.Close() }</span>()
+        <span class="cov0" title="0">injectVia(req.Header, req.Proto, cfg.Pseudonym)
+
+        slog.Debug("proxy request", "method", req.Method, "uri", req.RequestURI, "proto", req.Proto, "headers", len(req.Header), "client_addr", clientAddr, "upstream_addr", cfg.Upstream, "via", req.Header.Get("Via"))
+        if err := req.WriteProxy(proxyConn); err != nil </span><span class="cov0" title="0">{
+                slog.Error("failed to write request to proxy", "error", err, "error_type", errConnectionTerminated.errorType, "client_addr", clientAddr, "upstream_addr", cfg.Upstream, "method", req.Method, "host", req.Host)
+                writeHTTPError(conn, errConnectionTerminated)
+                return
+        }</span>
+
+        <span class="cov0" title="0">handleConnectTunnel(conn, proxyConn, reqReader, req, cfg.Pseudonym, clientAddr, cfg.IdleTimeout)</span>
+}
+</pre>
+		
+		<pre class="file" id="file10" style="display: none">package proxy
+
+import (
+        crand "crypto/rand"
+        "encoding/hex"
+        "fmt"
+        "io"
+        "log/slog"
+        "net"
+        "net/http"
+        "os"
+        "strings"
+)
+
+// randomHex returns n random bytes encoded as 2*n lowercase hex characters.
+// If the OS entropy source is unavailable, the process exits immediately.
+func randomHex(n int) string <span class="cov0" title="0">{
+        b := make([]byte, n)
+        if _, err := crand.Read(b); err != nil </span><span class="cov0" title="0">{
+                slog.Error("entropy source failure: crypto/rand is unavailable", "error", err)
+                os.Exit(1)
+        }</span>
+        <span class="cov0" title="0">return hex.EncodeToString(b)</span>
+}
+
+// generateObfuscatedID returns a random RFC 7239 §6.3 obfuscated identifier
+// of the form "_xxxxxxxx" (underscore followed by 8 lowercase hex characters).
+// Using 4 random bytes gives 2^32 unique values — sufficient to avoid
+// collisions in practice while keeping the identifier short.
+func generateObfuscatedID() string <span class="cov0" title="0">{
+        return "_" + randomHex(4)
+}</span>
+
+// appendHeaderValue appends value to the existing comma-separated header
+// identified by key, or sets it when the header is absent.
+func appendHeaderValue(header http.Header, key, value string) <span class="cov0" title="0">{
+        if existing := header.Get(key); existing != "" </span><span class="cov0" title="0">{
+                header.Set(key, existing+", "+value)
+        }</span> else<span class="cov0" title="0"> {
+                header.Set(key, value)
+        }</span>
+}
+
+// injectForwardingHeaders adds RFC 7239 Forwarded and/or de-facto
+// X-Forwarded-* headers to the request according to fwdCfg. It is called
+// after sanitizeHopByHop so that any client-supplied hop-by-hop headers have
+// already been stripped before we append our own values.
+func injectForwardingHeaders(req *http.Request, clientAddr string, fwdCfg ForwardingConfig) <span class="cov0" title="0">{
+        if !fwdCfg.ForwardedEnabled &amp;&amp; !fwdCfg.XForwardedForEnabled </span><span class="cov0" title="0">{
+                return
+        }</span>
+
+        // H1: RFC 7239 Forwarded header.
+        <span class="cov0" title="0">if fwdCfg.ForwardedEnabled </span><span class="cov0" title="0">{
+                obfID := generateObfuscatedID()
+                entry := fmt.Sprintf("for=%s;proto=http", obfID)
+                appendHeaderValue(req.Header, "Forwarded", entry)
+        }</span>
+
+        // H2/H3/H4
+        <span class="cov0" title="0">if fwdCfg.XForwardedForEnabled </span><span class="cov0" title="0">{
+                clientIP, _, err := net.SplitHostPort(clientAddr)
+                if err != nil </span><span class="cov0" title="0">{
+                        slog.Debug("could not parse host:port from client address, using raw address", "client_addr", clientAddr, "error", err)
+                        clientIP = clientAddr // fallback when address has no port component
+                }</span>
+                // H2
+                <span class="cov0" title="0">appendHeaderValue(req.Header, "X-Forwarded-For", clientIP)
+                // H3
+                if req.Header.Get("X-Forwarded-Proto") == "" </span><span class="cov0" title="0">{
+                        req.Header.Set("X-Forwarded-Proto", "http")
+                }</span>
+                // H4
+                <span class="cov0" title="0">if req.Header.Get("X-Forwarded-Host") == "" </span><span class="cov0" title="0">{
+                        req.Header.Set("X-Forwarded-Host", req.Host)
+                }</span>
+        }
+}
+
+// GenerateViaPseudonym returns a unique pseudonym for this proxy instance,
+// used in the Via header to identify this specific process. The format is
+// "spnego-proxy-&lt;8-hex-chars&gt;", providing 2^32 unique identifiers — sufficient
+// for loop detection across chains of spnego-proxy instances.
+func GenerateViaPseudonym() string <span class="cov0" title="0">{
+        return "spnego-proxy-" + randomHex(4)
+}</span>
+
+// injectVia appends a Via header entry to the given HTTP headers per
+// RFC 9110 §7.6.3. The entry identifies this proxy instance using the
+// protocol version received and the proxy's pseudonym.
+func injectVia(header http.Header, proto, pseudonym string) <span class="cov0" title="0">{
+        appendHeaderValue(header, "Via", proto+" "+pseudonym)
+}</span>
+
+// writeConnectOK writes a raw CONNECT 2xx response to conn without using
+// http.Response.Write, which would emit Content-Length: 0 and Connection:
+// close headers. Per RFC 9110 §9.3.6, a successful CONNECT response consists
+// only of a status line and optional headers — there is no message body, so
+// Content-Length is semantically meaningless. HTTP clients like Bun and undici
+// interpret Content-Length: 0 literally and close the connection before the
+// TLS handshake can begin.
+func writeConnectOK(conn net.Conn, resp *http.Response) error <span class="cov0" title="0">{
+        var buf strings.Builder
+        fmt.Fprintf(&amp;buf, "HTTP/%d.%d %d %s\r\n",
+                resp.ProtoMajor, resp.ProtoMinor,
+                resp.StatusCode, http.StatusText(resp.StatusCode))
+        if via := resp.Header.Get("Via"); via != "" </span><span class="cov0" title="0">{
+                fmt.Fprintf(&amp;buf, "Via: %s\r\n", via)
+        }</span>
+        <span class="cov0" title="0">buf.WriteString("\r\n")
+        _, err := io.WriteString(conn, buf.String())
+        return err</span>
+}
+
+// sanitizeHopByHop removes hop-by-hop headers from the request before
+// forwarding to the upstream proxy per RFC 9110 §7.6.1. It also handles
+// the Transfer-Encoding / Content-Length conflict (RFC 9112 §6.1) and
+// strips the client's Proxy-Authorization (RFC 9110 §11.7.1).
+//
+// The function accepts *http.Request (not bare http.Header) because Go's
+// ReadRequest moves Transfer-Encoding into req.TransferEncoding and
+// Trailer into req.Trailer, removing both from req.Header. We clear
+// req.Trailer so WriteProxy does not re-emit it. We intentionally
+// preserve req.TransferEncoding so the proxy relays the body framing
+// (e.g. chunked) to the upstream — clearing it would break body
+// forwarding.
+func sanitizeHopByHop(req *http.Request) <span class="cov0" title="0">{
+        header := req.Header
+
+        // B1 (RFC 9110 §7.6.1): parse the Connection header for additional
+        // field names to remove, then remove Connection itself.
+        for _, v := range header["Connection"] </span><span class="cov0" title="0">{
+                for name := range strings.SplitSeq(v, ",") </span><span class="cov0" title="0">{
+                        if name = strings.TrimSpace(name); name != "" </span><span class="cov0" title="0">{
+                                header.Del(name)
+                        }</span>
+                }
+        }
+        <span class="cov0" title="0">header.Del("Connection")
+
+        // Well-known hop-by-hop headers (RFC 9110 §7.6.1, RFC 9113 §8.2.2).
+        header.Del("Keep-Alive")
+        header.Del("Proxy-Connection") // K3: non-standard hop-by-hop
+        header.Del("TE")
+        header.Del("Trailer")
+        req.Trailer = nil     // ReadRequest moves Trailer into this field
+        header.Del("Upgrade") // J2: strip unless proxy supports the protocol
+
+        // B2 (RFC 9110 §11.7.1): consume the client's Proxy-Authorization.
+        // The proxy injects its own SPNEGO token after this function returns.
+        header.Del("Proxy-Authorization")
+
+        // E1 (RFC 9112 §6.1): when both Transfer-Encoding and Content-Length
+        // are present, remove Content-Length to prevent request smuggling.
+        // ReadRequest moves Transfer-Encoding into req.TransferEncoding, so
+        // we check that field rather than the header map.
+        if cl := header.Get("Content-Length"); len(req.TransferEncoding) &gt; 0 &amp;&amp; cl != "" </span><span class="cov0" title="0">{
+                logTECLConflict("request", req.TransferEncoding, cl)
+                header.Del("Content-Length")
+        }</span>
+}
+
+// writeMaxForwardsResponse sends a local 200 OK response when a TRACE or
+// OPTIONS request arrives with Max-Forwards: 0 per RFC 9110 §7.6.2. This
+// proxy is the designated final recipient for that request; it MUST NOT
+// forward it further.
+//
+// For TRACE, RFC 9110 §9.3.8 specifies the body should echo the received
+// message. For OPTIONS, RFC 9110 §9.3.7 specifies a simple 200 OK with an
+// Allow header describing the supported methods. We respond with 200 OK and
+// an empty body for both methods — this satisfies the MUST NOT
+// forward requirement without implementing full TRACE/OPTIONS semantics that
+// are irrelevant to a forwarding proxy.
+func writeMaxForwardsResponse(conn net.Conn, req *http.Request) <span class="cov0" title="0">{
+        resp := &amp;http.Response{
+                StatusCode: http.StatusOK,
+                ProtoMajor: 1,
+                ProtoMinor: 1,
+                Header: http.Header{
+                        "Content-Type": {"text/plain; charset=utf-8"},
+                        "Connection":   {"close"},
+                },
+                Body: http.NoBody,
+        }
+        // OPTIONS: advertise the request methods this proxy accepts.
+        if req.Method == http.MethodOptions </span><span class="cov0" title="0">{
+                resp.Header.Set("Allow", "GET, HEAD, POST, PUT, DELETE, OPTIONS, TRACE, CONNECT")
+        }</span>
+        <span class="cov0" title="0">_ = resp.Write(conn)</span>
+}
+</pre>
+		
+		<pre class="file" id="file11" style="display: none">package proxy
+
+import (
+        "cmp"
+        "net"
+        "net/netip"
+        "os"
+        "strings"
+)
+
+type noProxyRuleKind int
+
+const (
+        ruleHostname noProxyRuleKind = iota
+        ruleWildcard
+        ruleIP
+        ruleCIDR
+        ruleAll // bare "*" — matches every host
+)
+
+type noProxyRule struct {
+        raw    string // original pattern (for debug logging)
+        kind   noProxyRuleKind
+        host   string       // lowercase exact hostname (ruleHostname)
+        suffix string       // lowercase ".corp.com" (ruleWildcard)
+        ip     netip.Addr   // parsed IP (ruleIP)
+        prefix netip.Prefix // parsed CIDR (ruleCIDR)
+}
+
+// NoProxyMatcher pre-parses a comma-separated list of no-proxy bypass patterns
+// for fast matching at request time. Supported pattern forms are: exact
+// hostnames, wildcard domains (*.x or .x), bare IP addresses, and CIDRs.
+type NoProxyMatcher struct {
+        rules []noProxyRule
+}
+
+// NewNoProxyMatcher parses a comma-separated string of bypass patterns and
+// returns a ready-to-use NoProxyMatcher. Each pattern is classified at parse
+// time so that Match performs no allocations on the hot path.
+func NewNoProxyMatcher(patterns string) *NoProxyMatcher <span class="cov0" title="0">{
+        m := &amp;NoProxyMatcher{}
+        for pat := range strings.SplitSeq(patterns, ",") </span><span class="cov0" title="0">{
+                pat = strings.TrimSpace(pat)
+                if pat == "" </span><span class="cov0" title="0">{
+                        continue</span>
+                }
+                <span class="cov0" title="0">rule := noProxyRule{raw: pat}
+                if pat == "*" </span><span class="cov0" title="0">{
+                        rule.kind = ruleAll
+                }</span> else<span class="cov0" title="0"> if prefix, err := netip.ParsePrefix(pat); err == nil </span><span class="cov0" title="0">{
+                        rule.kind = ruleCIDR
+                        rule.prefix = prefix
+                }</span> else<span class="cov0" title="0"> if ip, err := netip.ParseAddr(pat); err == nil </span><span class="cov0" title="0">{
+                        rule.kind = ruleIP
+                        rule.ip = ip
+                }</span> else<span class="cov0" title="0"> if suffix, ok := strings.CutPrefix(pat, "*"); ok &amp;&amp; strings.HasPrefix(suffix, ".") </span><span class="cov0" title="0">{
+                        rule.kind = ruleWildcard
+                        // Normalize to a leading-dot suffix regardless of whether the
+                        // caller wrote "*.corp.com" or ".corp.com".
+                        rule.suffix = strings.ToLower(suffix)
+                }</span> else<span class="cov0" title="0"> if strings.HasPrefix(pat, ".") </span><span class="cov0" title="0">{
+                        rule.kind = ruleWildcard
+                        rule.suffix = strings.ToLower(pat)
+                }</span> else<span class="cov0" title="0"> {
+                        rule.kind = ruleHostname
+                        rule.host = strings.ToLower(pat)
+                }</span>
+                <span class="cov0" title="0">m.rules = append(m.rules, rule)</span>
+        }
+        <span class="cov0" title="0">return m</span>
+}
+
+// Match reports whether host (with or without a port) is covered by any
+// bypass pattern. On a match it also returns the original pattern string so
+// callers can include it in debug log messages.
+func (m *NoProxyMatcher) Match(host string) (matched bool, pattern string) <span class="cov0" title="0">{
+        // Strip port if present.
+        if h, _, err := net.SplitHostPort(host); err == nil </span><span class="cov0" title="0">{
+                host = h
+        }</span> else<span class="cov0" title="0"> {
+                // Bare bracketed IPv6 literal with no port must lose its brackets to
+                // parse as an IP for IP/CIDR rule matching.
+                host = stripIPv6Brackets(host)
+        }</span>
+        <span class="cov0" title="0">host = strings.ToLower(host)
+
+        // Try to parse as an IP once so we can use it for IP/CIDR rules.
+        hostIP, _ := netip.ParseAddr(host)
+
+        for _, rule := range m.rules </span><span class="cov0" title="0">{
+                switch rule.kind </span>{
+                case ruleAll:<span class="cov0" title="0">
+                        return true, rule.raw</span>
+                case ruleHostname:<span class="cov0" title="0">
+                        if host == rule.host </span><span class="cov0" title="0">{
+                                return true, rule.raw
+                        }</span>
+                case ruleWildcard:<span class="cov0" title="0">
+                        // Match the base domain itself (e.g. "corp.com" matches ".corp.com").
+                        base := rule.suffix[1:] // strip leading '.'
+                        if host == base </span><span class="cov0" title="0">{
+                                return true, rule.raw
+                        }</span>
+                        // Match any subdomain (e.g. "foo.corp.com" matches ".corp.com").
+                        <span class="cov0" title="0">if strings.HasSuffix(host, rule.suffix) </span><span class="cov0" title="0">{
+                                return true, rule.raw
+                        }</span>
+                case ruleIP:<span class="cov0" title="0">
+                        if hostIP.IsValid() &amp;&amp; hostIP == rule.ip </span><span class="cov0" title="0">{
+                                return true, rule.raw
+                        }</span>
+                case ruleCIDR:<span class="cov0" title="0">
+                        if hostIP.IsValid() &amp;&amp; rule.prefix.Contains(hostIP) </span><span class="cov0" title="0">{
+                                return true, rule.raw
+                        }</span>
+                }
+        }
+        <span class="cov0" title="0">return false, ""</span>
+}
+
+// ResolveNoProxy returns the effective no-proxy value by applying the
+// following precedence: explicit flag value &gt; NO_PROXY env var &gt; no_proxy
+// env var. An empty string is returned when none of the sources is set.
+func ResolveNoProxy(flagValue string) string <span class="cov0" title="0">{
+        return cmp.Or(flagValue, os.Getenv("NO_PROXY"), os.Getenv("no_proxy"))
+}</span>
+</pre>
+		
+		<pre class="file" id="file12" style="display: none">package proxy
+
+import (
+        "bufio"
+        "errors"
+        "log/slog"
+        "net/http"
+        "slices"
+        "strconv"
+        "strings"
+)
+
+// logTECLConflict logs the Transfer-Encoding / Content-Length conflict
+// resolution warning per RFC 9110 §6.2. direction is "request" or "response".
+func logTECLConflict(direction string, te []string, cl string) <span class="cov0" title="0">{
+        slog.Warn("TE/CL conflict resolved",
+                "direction", direction,
+                "action", "removed Content-Length per RFC 9110 §6.2",
+                "transfer_encoding", te,
+                "content_length", cl)
+}</span>
+
+// validateResponseHeaderBytes scans every upstream-emitted header field name
+// and value for octets that RFC 9110 §5.5 / RFC 9112 §11.1 forbid: bare CR,
+// bare LF, NUL, and other ASCII control characters (octets 0x00-0x08,
+// 0x0A-0x1F, excluding HTAB 0x09). The presence of any such octet inside a
+// post-parse value indicates either a malformed upstream emitter or a
+// response-splitting attempt; either way the proxy MUST NOT relay it.
+// Returns a non-nil *proxyError to reject the response with 502.
+//
+// Field names are validated against the RFC 9110 §5.1 tchar production so
+// that header lines with control characters in the name are also rejected.
+//
+// These checks duplicate golang.org/x/net/http/httpguts.ValidHeaderField*,
+// but that package transitively imports golang.org/x/net/idna →
+// golang.org/x/text, which is otherwise not a dependency. The ASCII byte
+// scans below are trivial, allocation-free, and keep the dependency
+// surface of this security-sensitive proxy minimal.
+//
+// Note: when an upstream emits a value containing a clean "\r\n" sequence
+// followed by another well-formed "Name: value" pair, Go's textproto parser
+// splits them into two distinct headers — this is indistinguishable from
+// an intentional dual-header response and cannot be detected here.
+func validateResponseHeaderBytes(resp *http.Response) *proxyError <span class="cov0" title="0">{
+        for name, values := range resp.Header </span><span class="cov0" title="0">{
+                if !isValidFieldName(name) </span><span class="cov0" title="0">{
+                        return errMalformedResponseHeader
+                }</span>
+                <span class="cov0" title="0">if slices.ContainsFunc(values, hasForbiddenFieldValueByte) </span><span class="cov0" title="0">{
+                        return errMalformedResponseHeader
+                }</span>
+        }
+        <span class="cov0" title="0">return nil</span>
+}
+
+// isValidFieldName reports whether name contains only RFC 9110 §5.1 tchar
+// characters. Used to reject upstream response header names containing
+// control characters introduced via a response-splitting attempt.
+func isValidFieldName(name string) bool <span class="cov0" title="0">{
+        if name == "" </span><span class="cov0" title="0">{
+                return false
+        }</span>
+        <span class="cov0" title="0">for i := 0; i &lt; len(name); i++ </span><span class="cov0" title="0">{
+                c := name[i]
+                switch </span>{
+                case c &gt;= 'a' &amp;&amp; c &lt;= 'z',
+                        c &gt;= 'A' &amp;&amp; c &lt;= 'Z',
+                        c &gt;= '0' &amp;&amp; c &lt;= '9':<span class="cov0" title="0">
+                        continue</span>
+                }
+                <span class="cov0" title="0">switch c </span>{
+                case '!', '#', '$', '%', '&amp;', '\'', '*', '+', '-', '.',
+                        '^', '_', '`', '|', '~':<span class="cov0" title="0">
+                        continue</span>
+                }
+                <span class="cov0" title="0">return false</span>
+        }
+        <span class="cov0" title="0">return true</span>
+}
+
+// hasForbiddenFieldValueByte reports whether v contains any octet forbidden
+// in an HTTP field-value per RFC 9110 §5.5: NUL, CR, LF, and other ASCII
+// control characters (0x00-0x08, 0x0A-0x1F). HTAB (0x09) is permitted.
+// obs-text (0x80-0xFF) is also permitted because senders MAY emit it and
+// recipients SHOULD pass it through.
+func hasForbiddenFieldValueByte(v string) bool <span class="cov0" title="0">{
+        for i := 0; i &lt; len(v); i++ </span><span class="cov0" title="0">{
+                c := v[i]
+                if c == '\t' </span><span class="cov0" title="0">{
+                        continue</span>
+                }
+                <span class="cov0" title="0">if c &lt; 0x20 || c == 0x7F </span><span class="cov0" title="0">{
+                        return true
+                }</span>
+        }
+        <span class="cov0" title="0">return false</span>
+}
+
+// validateResponseContentLength checks the upstream response for invalid
+// Content-Length values per RFC 9112 §6.1. It returns a non-nil *proxyError
+// when the response must be rejected with 502.
+func validateResponseContentLength(resp *http.Response) *proxyError <span class="cov0" title="0">{
+        clValues := resp.Header["Content-Length"]
+        if len(clValues) == 0 </span><span class="cov0" title="0">{
+                return nil
+        }</span>
+
+        // Collect all individual values; headers may be comma-separated per
+        // RFC 9110 §5.6.1. Compare numerically so that semantically equal
+        // values like "042" and "42" are not rejected.
+        <span class="cov0" title="0">var first uint64
+        var seen bool
+        for _, v := range clValues </span><span class="cov0" title="0">{
+                for part := range strings.SplitSeq(v, ",") </span><span class="cov0" title="0">{
+                        part = strings.TrimSpace(part)
+                        if part == "" </span><span class="cov0" title="0">{
+                                continue</span>
+                        }
+                        <span class="cov0" title="0">n, err := strconv.ParseUint(part, 10, 64)
+                        if err != nil </span><span class="cov0" title="0">{
+                                return errInvalidContentLength
+                        }</span>
+                        <span class="cov0" title="0">if !seen </span><span class="cov0" title="0">{
+                                first = n
+                                seen = true
+                        }</span> else<span class="cov0" title="0"> if n != first </span><span class="cov0" title="0">{
+                                return errInvalidContentLength
+                        }</span>
+                }
+        }
+        <span class="cov0" title="0">return nil</span>
+}
+
+// errContentLengthInvalid is a sentinel error returned by readUpstreamResponse
+// when the upstream response has an invalid Content-Length header, either
+// detected by Go's ReadResponse or by validateResponseContentLength.
+var errContentLengthInvalid = errors.New("invalid Content-Length in upstream response")
+
+// errMalformedResponse is a sentinel error returned by readUpstreamResponse
+// when the upstream response contains a malformed header field name or
+// forbidden control octet in a header value (RFC 9110 §5.5 / RFC 9112 §11.1).
+var errMalformedResponse = errors.New("malformed upstream response header")
+
+// readUpstreamResponse reads and validates an upstream HTTP response. It
+// performs: ReadResponse, Content-Length error detection, content-length
+// validation, Transfer-Encoding / Content-Length conflict resolution, and
+// Via header injection.
+//
+// On success it returns the parsed response (caller must close Body).
+// On Content-Length errors it returns errContentLengthInvalid so the caller
+// can send a 502. On other parse failures it returns a different error,
+// signalling the caller to fall back to raw relay.
+func readUpstreamResponse(upstreamReader *bufio.Reader, req *http.Request, pseudonym string) (*http.Response, error) <span class="cov0" title="0">{
+        resp, err := http.ReadResponse(upstreamReader, req)
+        if err != nil </span><span class="cov0" title="0">{
+                // E2 (RFC 9112 §6.1): Go's ReadResponse rejects responses
+                // with invalid Content-Length (e.g. non-numeric values,
+                // conflicting duplicates). Detect this so callers return 502
+                // instead of raw-relaying the malformed response.
+                //
+                // The match on the error string is deliberate: Go's
+                // net/http does not export a typed error for this case.
+                // If the wording changes in a future Go release, the
+                // worst outcome is falling through to the raw-relay path
+                // — not a security issue, since Go already rejected
+                // the malformed response.
+                if strings.Contains(err.Error(), "Content-Length") </span><span class="cov0" title="0">{
+                        return nil, errContentLengthInvalid
+                }</span>
+                <span class="cov0" title="0">return nil, err</span>
+        }
+
+        // E2 (RFC 9112 §6.1): reject responses with invalid Content-Length.
+        // Defense-in-depth: Go's ReadResponse currently rejects most
+        // invalid Content-Length values before this point, but our
+        // validator catches edge cases (e.g. comma-separated differing
+        // values) and guards against future Go stdlib changes.
+        <span class="cov0" title="0">if pe := validateResponseContentLength(resp); pe != nil </span><span class="cov0" title="0">{
+                _ = resp.Body.Close()
+                return nil, errContentLengthInvalid
+        }</span>
+
+        // RFC 9110 §5.5 / RFC 9112 §11.1: reject responses whose header field
+        // names or values contain forbidden control octets (response-splitting
+        // defence-in-depth). Go's textproto parser already rejects most such
+        // content, but a bare CR mid-value or a NUL byte can survive parsing.
+        <span class="cov0" title="0">if pe := validateResponseHeaderBytes(resp); pe != nil </span><span class="cov0" title="0">{
+                _ = resp.Body.Close()
+                return nil, errMalformedResponse
+        }</span>
+
+        // RFC 9112 §6.1: if both Transfer-Encoding and Content-Length
+        // are present in the response, remove Content-Length.
+        <span class="cov0" title="0">if cl := resp.Header.Get("Content-Length"); len(resp.TransferEncoding) &gt; 0 &amp;&amp; cl != "" </span><span class="cov0" title="0">{
+                logTECLConflict("response", resp.TransferEncoding, cl)
+                resp.Header.Del("Content-Length")
+                // Reset to -1 so resp.Write uses chunked framing instead
+                // of a fixed-length body derived from the removed header.
+                resp.ContentLength = -1
+        }</span>
+
+        // B3 (RFC 9110 §11.7.2): Proxy-Authenticate is hop-by-hop — it applies
+        // only between the client and the next inbound proxy. Strip it before
+        // relaying the response downstream.
+        <span class="cov0" title="0">resp.Header.Del("Proxy-Authenticate")
+
+        // RFC 9110 §7.6.3: a forward proxy MUST add Via to responses.
+        injectVia(resp.Header, resp.Proto, pseudonym)
+
+        return resp, nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file13" style="display: none">package proxy
+
+import (
+        "context"
+        "log/slog"
+        "net"
+        "sync"
+        "time"
+)
+
+// Serve runs the accept loop until ctx is cancelled, then drains in-flight
+// connections. On cancellation the listener is closed and the function waits
+// up to drainTimeout for active handleClient goroutines to finish before
+// returning. The listener is assumed to already have any concurrency limit
+// (netutil.LimitListener) applied by the caller.
+func Serve(ctx context.Context, l net.Listener, cfg Config, drainTimeout time.Duration) <span class="cov0" title="0">{
+        var wg sync.WaitGroup
+        go func() </span><span class="cov0" title="0">{
+                for </span><span class="cov0" title="0">{
+                        conn, err := l.Accept()
+                        if err != nil </span><span class="cov0" title="0">{
+                                select </span>{
+                                case &lt;-ctx.Done():<span class="cov0" title="0">
+                                        return</span>
+                                default:<span class="cov0" title="0"></span>
+                                }
+                                <span class="cov0" title="0">slog.Error("accept error", "error", err)
+                                continue</span>
+                        }
+                        <span class="cov0" title="0">wg.Go(func() </span><span class="cov0" title="0">{
+                                handleClient(conn, cfg)
+                        }</span>)
+                }
+        }()
+
+        <span class="cov0" title="0">&lt;-ctx.Done()
+        slog.Info("shutting down, draining connections...")
+        _ = l.Close()
+
+        done := make(chan struct{})
+        go func() </span><span class="cov0" title="0">{ wg.Wait(); close(done) }</span>()
+        <span class="cov0" title="0">select </span>{
+        case &lt;-done:<span class="cov0" title="0">
+                slog.Info("all connections drained")</span>
+        case &lt;-time.After(drainTimeout):<span class="cov0" title="0">
+                slog.Warn("drain timeout exceeded, forcing exit")</span>
+        }
+}
+</pre>
+		
+		</div>
+	</body>
+	<script>
+	(function() {
+		var files = document.getElementById('files');
+		var visible;
+		files.addEventListener('change', onChange, false);
+		function select(part) {
+			if (visible)
+				visible.style.display = 'none';
+			visible = document.getElementById(part);
+			if (!visible)
+				return;
+			files.value = part;
+			visible.style.display = 'block';
+			location.hash = part;
+		}
+		function onChange() {
+			select(files.value);
+			window.scrollTo(0, 0);
+		}
+		if (location.hash != "") {
+			select(location.hash.substr(1));
+		}
+		if (!visible) {
+			select("file0");
+		}
+	})();
+	</script>
+</html>
