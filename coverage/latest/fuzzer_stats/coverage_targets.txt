@@ -1,7 +1,7 @@
-fuzz_connect_port_chain
-fuzz_content_length_values
-fuzz_same_host
-fuzz_no_proxy_match
-fuzz_ip_allowlist_chain
 fuzz_upstream_response_framing
+fuzz_content_length_values
+fuzz_ip_allowlist_chain
+fuzz_same_host
 fuzz_header_byte_validators
+fuzz_connect_port_chain
+fuzz_no_proxy_match
