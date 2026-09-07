@@ -61,13 +61,13 @@
 				
 				<option value="file2">/github/workspace/build-out/src/spnego-proxy/internal/proxy/circuit_breaker.go (0.0%)</option>
 				
-				<option value="file3">/github/workspace/build-out/src/spnego-proxy/internal/proxy/config.go (82.1%)</option>
+				<option value="file3">/github/workspace/build-out/src/spnego-proxy/internal/proxy/config.go (81.1%)</option>
 				
 				<option value="file4">/github/workspace/build-out/src/spnego-proxy/internal/proxy/connect.go (0.0%)</option>
 				
 				<option value="file5">/github/workspace/build-out/src/spnego-proxy/internal/proxy/dial.go (11.1%)</option>
 				
-				<option value="file6">/github/workspace/build-out/src/spnego-proxy/internal/proxy/direct.go (10.9%)</option>
+				<option value="file6">/github/workspace/build-out/src/spnego-proxy/internal/proxy/direct.go (11.5%)</option>
 				
 				<option value="file7">/github/workspace/build-out/src/spnego-proxy/internal/proxy/errors.go (0.0%)</option>
 				
@@ -77,9 +77,9 @@
 				
 				<option value="file10">/github/workspace/build-out/src/spnego-proxy/internal/proxy/headers.go (0.0%)</option>
 				
-				<option value="file11">/github/workspace/build-out/src/spnego-proxy/internal/proxy/noproxy.go (97.8%)</option>
+				<option value="file11">/github/workspace/build-out/src/spnego-proxy/internal/proxy/noproxy.go (97.1%)</option>
 				
-				<option value="file12">/github/workspace/build-out/src/spnego-proxy/internal/proxy/response.go (68.9%)</option>
+				<option value="file12">/github/workspace/build-out/src/spnego-proxy/internal/proxy/response.go (67.2%)</option>
 				
 				<option value="file13">/github/workspace/build-out/src/spnego-proxy/internal/proxy/server.go (0.0%)</option>
 				
@@ -441,69 +441,66 @@ type TokenProvider interface {
 }
 
 // SplitCSV splits a comma-separated string into trimmed, non-empty tokens.
-func SplitCSV(s string) []string <span class="cov7" title="806">{
+func SplitCSV(s string) []string <span class="cov7" title="1851">{
         var out []string
-        for part := range strings.SplitSeq(s, ",") </span><span class="cov10" title="11236">{
-                if part = strings.TrimSpace(part); part != "" </span><span class="cov9" title="9578">{
+        for part := range strings.SplitSeq(s, ",") </span><span class="cov10" title="41863">{
+                if part = strings.TrimSpace(part); part != "" </span><span class="cov9" title="33583">{
                         out = append(out, part)
                 }</span>
         }
-        <span class="cov7" title="806">return out</span>
+        <span class="cov7" title="1851">return out</span>
 }
 
 // ParseAllowList parses a comma-separated string of IPs and CIDR ranges
 // into a slice of *net.IPNet entries for use with ipAllowed.
-func ParseAllowList(s string) ([]*net.IPNet, error) <span class="cov7" title="551">{
-        if s == "" </span><span class="cov4" title="27">{
-                return nil, nil
-        }</span>
-        <span class="cov7" title="524">var nets []*net.IPNet
-        for _, entry := range SplitCSV(s) </span><span class="cov9" title="4696">{
-                if strings.Contains(entry, "/") </span><span class="cov8" title="1620">{
+func ParseAllowList(s string) ([]*net.IPNet, error) <span class="cov6" title="551">{
+        var nets []*net.IPNet
+        for _, entry := range SplitCSV(s) </span><span class="cov8" title="4694">{
+                if strings.Contains(entry, "/") </span><span class="cov7" title="1620">{
                         _, ipNet, err := net.ParseCIDR(entry)
-                        if err != nil </span><span class="cov3" title="8">{
+                        if err != nil </span><span class="cov2" title="8">{
                                 return nil, fmt.Errorf("invalid CIDR %q: %w", entry, err)
                         }</span>
-                        <span class="cov8" title="1612">nets = append(nets, ipNet)</span>
-                } else<span class="cov8" title="3076"> {
+                        <span class="cov7" title="1612">nets = append(nets, ipNet)</span>
+                } else<span class="cov7" title="3074"> {
                         ip := net.ParseIP(entry)
-                        if ip == nil </span><span class="cov6" title="347">{
+                        if ip == nil </span><span class="cov5" title="347">{
                                 return nil, fmt.Errorf("invalid IP address: %q", entry)
                         }</span>
-                        <span class="cov8" title="2729">bits := 32
-                        if ip.To4() == nil </span><span class="cov8" title="2234">{
+                        <span class="cov7" title="2727">bits := 32
+                        if ip.To4() == nil </span><span class="cov7" title="2233">{
                                 bits = 128
                         }</span>
-                        <span class="cov8" title="2729">nets = append(nets, &amp;net.IPNet{IP: ip, Mask: net.CIDRMask(bits, bits)})</span>
+                        <span class="cov7" title="2727">nets = append(nets, &amp;net.IPNet{IP: ip, Mask: net.CIDRMask(bits, bits)})</span>
                 }
         }
-        <span class="cov5" title="169">return nets, nil</span>
+        <span class="cov5" title="196">return nets, nil</span>
 }
 
 // ipAllowed returns true if the given IP is in the allow list.
 // A nil or empty allow list permits all IPs.
-func ipAllowed(ip net.IP, allowList []*net.IPNet) bool <span class="cov7" title="551">{
+func ipAllowed(ip net.IP, allowList []*net.IPNet) bool <span class="cov6" title="551">{
         if len(allowList) == 0 </span><span class="cov6" title="408">{
                 return true
         }</span>
         // RFC 4291: an IPv4-mapped IPv6 address denotes the same host as the bare
         // IPv4 address. Canonicalise to the 4-byte form so allowlist identity is
         // consistent regardless of which form the client connected with.
-        <span class="cov5" title="143">if v4 := ip.To4(); v4 != nil </span><span class="cov4" title="26">{
+        <span class="cov5" title="143">if v4 := ip.To4(); v4 != nil </span><span class="cov3" title="26">{
                 ip = v4
         }</span>
-        <span class="cov5" title="143">for _, n := range allowList </span><span class="cov8" title="2251">{
-                if n.Contains(ip) </span><span class="cov4" title="34">{
+        <span class="cov5" title="143">for _, n := range allowList </span><span class="cov7" title="2250">{
+                if n.Contains(ip) </span><span class="cov3" title="34">{
                         return true
                 }</span>
         }
-        <span class="cov5" title="109">return false</span>
+        <span class="cov4" title="109">return false</span>
 }
 
 // connectPortAllowed reports whether port is in the allowed set.
 // An empty allowedPorts slice means all ports are permitted.
-func connectPortAllowed(port string, allowedPorts []string) bool <span class="cov6" title="186">{
-        return len(allowedPorts) == 0 || slices.ContainsFunc(allowedPorts, func(p string) bool </span><span class="cov8" title="1974">{ return p == ConnectPortWildcard || p == port }</span>)
+func connectPortAllowed(port string, allowedPorts []string) bool <span class="cov5" title="186">{
+        return len(allowedPorts) == 0 || slices.ContainsFunc(allowedPorts, func(p string) bool </span><span class="cov7" title="1976">{ return p == ConnectPortWildcard || p == port }</span>)
 }
 </pre>
 		
@@ -614,6 +611,19 @@ func forwardHalf(dst net.Conn, src io.Reader, srcConn net.Conn, fromAddr, toAddr
         <span class="cov0" title="0">logForwardError(err, fromAddr, toAddr)</span>
 }
 
+// forwardTunnel copies both directions until both halves finish. Reuse the
+// existing readers so payload buffered while reading HTTP headers is preserved.
+func forwardTunnel(conn, peerConn net.Conn, reqReader, peerReader *bufio.Reader, idleTimeout time.Duration) <span class="cov0" title="0">{
+        var wg sync.WaitGroup
+        wg.Go(func() </span><span class="cov0" title="0">{
+                forwardHalf(peerConn, reqReader, conn, conn.RemoteAddr(), peerConn.RemoteAddr(), idleTimeout)
+        }</span>)
+        <span class="cov0" title="0">wg.Go(func() </span><span class="cov0" title="0">{
+                forwardHalf(conn, peerReader, peerConn, peerConn.RemoteAddr(), conn.RemoteAddr(), idleTimeout)
+        }</span>)
+        <span class="cov0" title="0">wg.Wait()</span>
+}
+
 // handleConnectTunnel manages the CONNECT tunnel lifecycle per RFC 9110 §9.3.6.
 // It reads the upstream response before forwarding any client payload (D6),
 // relays the response to the client (D7), and then starts bidirectional
@@ -651,14 +661,7 @@ func handleConnectTunnel(conn, proxyConn net.Conn, reqReader *bufio.Reader, req 
         }</span>
 
         <span class="cov0" title="0">slog.Debug("CONNECT tunnel established", "client_addr", clientAddr, "upstream_addr", proxyConn.RemoteAddr())
-        var wg sync.WaitGroup
-        wg.Go(func() </span><span class="cov0" title="0">{
-                forwardHalf(proxyConn, reqReader, conn, conn.RemoteAddr(), proxyConn.RemoteAddr(), idleTimeout)
-        }</span>)
-        <span class="cov0" title="0">wg.Go(func() </span><span class="cov0" title="0">{
-                forwardHalf(conn, upstreamReader, proxyConn, proxyConn.RemoteAddr(), conn.RemoteAddr(), idleTimeout)
-        }</span>)
-        <span class="cov0" title="0">wg.Wait()</span>
+        forwardTunnel(conn, proxyConn, reqReader, upstreamReader, idleTimeout)</span>
 }
 </pre>
 		
@@ -675,10 +678,10 @@ import (
 // extractHost returns the host portion of addr, stripping any port suffix.
 // If addr has no port, it is returned unchanged.
 func extractHost(addr string) string <span class="cov10" title="551">{
-        if h, _, err := net.SplitHostPort(addr); err == nil </span><span class="cov5" title="21">{
+        if h, _, err := net.SplitHostPort(addr); err == nil </span><span class="cov5" title="20">{
                 return h
         }</span>
-        <span class="cov9" title="530">return addr</span>
+        <span class="cov9" title="531">return addr</span>
 }
 
 // UpstreamTLSConfig holds optional TLS settings for the upstream proxy connection.
@@ -745,12 +748,10 @@ func dialUpstream(addr string, tlsCfg UpstreamTLSConfig) (net.Conn, error) <span
 import (
         "bufio"
         "errors"
-        "io"
         "log/slog"
         "net"
         "net/http"
         "strings"
-        "sync"
         "time"
 )
 
@@ -758,11 +759,11 @@ import (
 // IPv6 literal that has no port (e.g. "[::1]" -&gt; "::1"). It is a no-op for any
 // other input. Used on host-canonicalisation paths where net.SplitHostPort has
 // already failed (no port present).
-func stripIPv6Brackets(host string) string <span class="cov10" title="2718">{
+func stripIPv6Brackets(host string) string <span class="cov10" title="2706">{
         if strings.HasPrefix(host, "[") &amp;&amp; strings.HasSuffix(host, "]") </span><span class="cov5" title="42">{
                 return host[1 : len(host)-1]
         }</span>
-        <span class="cov9" title="2676">return host</span>
+        <span class="cov9" title="2664">return host</span>
 }
 
 // sameHost reports whether two HTTP Host values refer to the same
@@ -770,19 +771,19 @@ func stripIPv6Brackets(host string) string <span class="cov10" title="2718">{
 // host has no explicit port. Bracketed IPv6 addresses without a port (e.g.
 // "[::1]") are normalised to "[::1]:&lt;defaultPort&gt;" so they match the same
 // IPv6 address written with an explicit port.
-func sameHost(a, b, defaultPort string) bool <span class="cov8" title="933">{
-        canon := func(h string) string </span><span class="cov9" title="1866">{
+func sameHost(a, b, defaultPort string) bool <span class="cov8" title="927">{
+        canon := func(h string) string </span><span class="cov9" title="1854">{
                 h = strings.ToLower(strings.TrimSpace(h))
                 host, port, err := net.SplitHostPort(h)
-                if err != nil </span><span class="cov9" title="1746">{
+                if err != nil </span><span class="cov9" title="1736">{
                         host = h
                         port = defaultPort
                         // Strip brackets so net.JoinHostPort below re-adds them once.
                         host = stripIPv6Brackets(host)
                 }</span>
-                <span class="cov9" title="1866">return net.JoinHostPort(host, port)</span>
+                <span class="cov9" title="1854">return net.JoinHostPort(host, port)</span>
         }
-        <span class="cov8" title="933">return canon(a) == canon(b)</span>
+        <span class="cov8" title="927">return canon(a) == canon(b)</span>
 }
 
 // dialDirect dials a target host directly, defaulting to defaultPort when
@@ -797,16 +798,34 @@ func dialDirect(host, defaultPort string, timeout time.Duration) (net.Conn, stri
         return conn, target, err</span>
 }
 
-// handleDialError logs and responds to a failed direct dial attempt.
-func handleDialError(conn net.Conn, err error, target, clientAddr, path string) <span class="cov0" title="0">{
+// handleDialError logs and responds to a failed dial attempt. An empty path
+// identifies an upstream dial; direct dials use "HTTP" or "CONNECT".
+func (s *ClientSession) handleDialError(err error, target, path string) <span class="cov0" title="0">{
+        pe := errConnectionRefused
+        message := "noproxy direct dial failed"
         var ne net.Error
         if errors.As(err, &amp;ne) &amp;&amp; ne.Timeout() </span><span class="cov0" title="0">{
-                slog.Error("noproxy direct dial timeout", "error", err, "target", target, "client_addr", clientAddr, "path", path)
-                writeHTTPError(conn, errConnectionTimeout)
-        }</span> else<span class="cov0" title="0"> {
-                slog.Error("noproxy direct dial failed", "error", err, "target", target, "client_addr", clientAddr, "path", path)
-                writeHTTPError(conn, errConnectionRefused)
+                pe = errConnectionTimeout
+                message = "noproxy direct dial timeout"
         }</span>
+        <span class="cov0" title="0">if path == "" </span><span class="cov0" title="0">{
+                slog.Error("failed to connect to proxy", "error", err, "error_type", pe.errorType, "client_addr", s.clientAddr, "upstream_addr", target)
+        }</span> else<span class="cov0" title="0"> {
+                slog.Error(message, "error", err, "target", target, "client_addr", s.clientAddr, "path", path)
+        }</span>
+        <span class="cov0" title="0">writeHTTPError(s.conn, pe)</span>
+}
+
+// logDirectError logs a failure on a direct (noproxy) connection: at Debug
+// level for an expected connection close, at Error level otherwise. what
+// names the failed step; the logged message is what + " closed" or
+// what + " failed".
+func (s *ClientSession) logDirectError(what string, err error, target string) <span class="cov0" title="0">{
+        if isExpectedCloseError(err) </span><span class="cov0" title="0">{
+                slog.Debug(what+" closed", "error", err, "target", target, "client_addr", s.clientAddr)
+                return
+        }</span>
+        <span class="cov0" title="0">slog.Error(what+" failed", "error", err, "target", target, "client_addr", s.clientAddr)</span>
 }
 
 // forwardDirect forwards an HTTP request directly to the target host,
@@ -822,7 +841,7 @@ func handleDialError(conn net.Conn, err error, target, clientAddr, path string) 
 func (s *ClientSession) forwardDirect(req *http.Request) <span class="cov0" title="0">{
         targetConn, target, err := dialDirect(req.Host, "80", s.cfg.DialTimeout)
         if err != nil </span><span class="cov0" title="0">{
-                handleDialError(s.conn, err, target, s.clientAddr, "HTTP")
+                s.handleDialError(err, target, "HTTP")
                 return
         }</span>
         <span class="cov0" title="0">defer func() </span><span class="cov0" title="0">{ _ = targetConn.Close() }</span>()
@@ -837,85 +856,85 @@ func (s *ClientSession) forwardDirect(req *http.Request) <span class="cov0" titl
 
         for iter := 0; ; iter++ </span><span class="cov0" title="0">{
                 if iter &gt; 0 </span><span class="cov0" title="0">{
-                        _ = s.conn.SetReadDeadline(time.Now().Add(s.cfg.ReadTimeout))
-                        nextReq, rerr := http.ReadRequest(s.reqReader)
-                        _ = s.conn.SetReadDeadline(time.Time{})
-                        if rerr != nil </span><span class="cov0" title="0">{
-                                slog.Debug("noproxy keep-alive loop ended", "error", rerr, "target", target, "iter", iter, "client_addr", s.clientAddr)
+                        if req = s.nextDirectRequest(boundHost, target, iter); req == nil </span><span class="cov0" title="0">{
                                 return
                         }</span>
-                        <span class="cov0" title="0">proceed, pe := s.validateRequest(nextReq)
-                        if !proceed </span><span class="cov0" title="0">{
-                                if pe != nil </span><span class="cov0" title="0">{
-                                        writeHTTPError(s.conn, pe)
-                                }</span>
-                                <span class="cov0" title="0">return</span>
-                        }
-                        // A direct TCP connection is bound to a single target host;
-                        // reject pipelined requests for any other host.
-                        <span class="cov0" title="0">if !sameHost(nextReq.Host, boundHost, "80") </span><span class="cov0" title="0">{
-                                slog.Warn("noproxy pipelined request targets different host", "bound_host", boundHost, "request_host", nextReq.Host, "client_addr", s.clientAddr)
-                                writeHTTPError(s.conn, errMismatchedTarget)
-                                return
-                        }</span>
-                        // CONNECT on a plain-HTTP direct connection: cannot tunnel
-                        // on a connection used for HTTP responses.
-                        <span class="cov0" title="0">if nextReq.Method == http.MethodConnect </span><span class="cov0" title="0">{
-                                slog.Warn("noproxy pipelined CONNECT on HTTP connection", "client_addr", s.clientAddr)
-                                writeHTTPError(s.conn, errMismatchedTarget)
-                                return
-                        }</span>
-                        <span class="cov0" title="0">injectVia(nextReq.Header, nextReq.Proto, s.cfg.Pseudonym)
-                        req = nextReq</span>
                 }
-
-                // Write request in origin form (not proxy form).
-                <span class="cov0" title="0">if err := req.Write(targetConn); err != nil </span><span class="cov0" title="0">{
-                        if isExpectedCloseError(err) </span><span class="cov0" title="0">{
-                                slog.Debug("noproxy write request closed", "error", err, "target", target, "client_addr", s.clientAddr)
-                        }</span> else<span class="cov0" title="0"> {
-                                slog.Error("noproxy write request failed", "error", err, "target", target, "client_addr", s.clientAddr)
-                        }</span>
-                        <span class="cov0" title="0">writeHTTPError(s.conn, errConnectionTerminated)
-                        return</span>
-                }
-
-                <span class="cov0" title="0">slog.Debug("noproxy HTTP response forwarding start", "target", target, "client_addr", s.clientAddr, "iter", iter)
-                resp, rerr := http.ReadResponse(upstreamReader, req)
-                if rerr != nil </span><span class="cov0" title="0">{
-                        if isExpectedCloseError(rerr) </span><span class="cov0" title="0">{
-                                slog.Debug("noproxy read response closed", "error", rerr, "target", target, "client_addr", s.clientAddr)
-                        }</span> else<span class="cov0" title="0"> {
-                                slog.Error("noproxy read response failed", "error", rerr, "target", target, "client_addr", s.clientAddr)
-                        }</span>
-                        <span class="cov0" title="0">return</span>
-                }
-                <span class="cov0" title="0">injectVia(resp.Header, resp.Proto, s.cfg.Pseudonym)
-                writeErr := resp.Write(s.conn)
-                if writeErr != nil </span><span class="cov0" title="0">{
-                        _ = resp.Body.Close()
-                        if isExpectedCloseError(writeErr) </span><span class="cov0" title="0">{
-                                slog.Debug("noproxy forward response closed", "error", writeErr, "target", target, "client_addr", s.clientAddr)
-                        }</span> else<span class="cov0" title="0"> {
-                                slog.Error("noproxy forward response failed", "error", writeErr, "target", target, "client_addr", s.clientAddr)
-                        }</span>
-                        <span class="cov0" title="0">return</span>
-                }
-                // Drain so upstreamReader is aligned for the next iteration. A
-                // drain failure means the reader may be mid-body; reusing it
-                // risks response misframing, so close instead of looping.
-                <span class="cov0" title="0">if _, derr := io.Copy(io.Discard, resp.Body); derr != nil </span><span class="cov0" title="0">{
-                        _ = resp.Body.Close()
-                        slog.Debug("noproxy upstream body drain failed, closing connection", "error", derr, "target", target, "client_addr", s.clientAddr)
-                        return
-                }</span>
-                <span class="cov0" title="0">_ = resp.Body.Close()
-                slog.Debug("noproxy HTTP response forwarding done", "target", target, "client_addr", s.clientAddr, "iter", iter)
-
-                if connectionWillClose(req, resp) </span><span class="cov0" title="0">{
+                <span class="cov0" title="0">if !s.relayDirect(req, targetConn, upstreamReader, target, iter) </span><span class="cov0" title="0">{
                         return
                 }</span>
         }
+}
+
+// nextDirectRequest reads and validates the next pipelined request on an
+// established direct connection and injects Via. It returns nil when the
+// keep-alive loop must stop: the client stopped sending, validation
+// rejected the request, the request targets a host this connection is not
+// bound to, or it is a CONNECT that cannot tunnel on a connection already
+// used for HTTP responses. Any client-facing error response has already
+// been written in those cases.
+func (s *ClientSession) nextDirectRequest(boundHost, target string, iter int) *http.Request <span class="cov0" title="0">{
+        _ = s.conn.SetReadDeadline(time.Now().Add(s.cfg.ReadTimeout))
+        req, rerr := http.ReadRequest(s.reqReader)
+        _ = s.conn.SetReadDeadline(time.Time{})
+        if rerr != nil </span><span class="cov0" title="0">{
+                slog.Debug("noproxy keep-alive loop ended", "error", rerr, "target", target, "iter", iter, "client_addr", s.clientAddr)
+                return nil
+        }</span>
+        <span class="cov0" title="0">proceed, pe := s.validateRequest(req)
+        if !proceed </span><span class="cov0" title="0">{
+                if pe != nil </span><span class="cov0" title="0">{
+                        writeHTTPError(s.conn, pe)
+                }</span>
+                <span class="cov0" title="0">return nil</span>
+        }
+        // A direct TCP connection is bound to a single target host;
+        // reject pipelined requests for any other host.
+        <span class="cov0" title="0">if !sameHost(req.Host, boundHost, "80") </span><span class="cov0" title="0">{
+                slog.Warn("noproxy pipelined request targets different host", "bound_host", boundHost, "request_host", req.Host, "client_addr", s.clientAddr)
+                writeHTTPError(s.conn, errMismatchedTarget)
+                return nil
+        }</span>
+        // CONNECT on a plain-HTTP direct connection: cannot tunnel
+        // on a connection used for HTTP responses.
+        <span class="cov0" title="0">if req.Method == http.MethodConnect </span><span class="cov0" title="0">{
+                slog.Warn("noproxy pipelined CONNECT on HTTP connection", "client_addr", s.clientAddr)
+                writeHTTPError(s.conn, errMismatchedTarget)
+                return nil
+        }</span>
+        <span class="cov0" title="0">injectVia(req.Header, req.Proto, s.cfg.Pseudonym)
+        return req</span>
+}
+
+// relayDirect writes one request to the direct target connection in origin
+// form and relays the response back to the client with Via injected. It
+// reports whether both connections may be reused for a further request;
+// false means the connection must be closed, either because of an error or
+// because a side signalled close.
+func (s *ClientSession) relayDirect(req *http.Request, targetConn net.Conn, upstreamReader *bufio.Reader, target string, iter int) bool <span class="cov0" title="0">{
+        // Write request in origin form (not proxy form).
+        if err := req.Write(targetConn); err != nil </span><span class="cov0" title="0">{
+                s.logDirectError("noproxy write request", err, target)
+                writeHTTPError(s.conn, errConnectionTerminated)
+                return false
+        }</span>
+
+        <span class="cov0" title="0">slog.Debug("noproxy HTTP response forwarding start", "target", target, "client_addr", s.clientAddr, "iter", iter)
+        resp, rerr := http.ReadResponse(upstreamReader, req)
+        if rerr != nil </span><span class="cov0" title="0">{
+                s.logDirectError("noproxy read response", rerr, target)
+                return false
+        }</span>
+        <span class="cov0" title="0">injectVia(resp.Header, resp.Proto, s.cfg.Pseudonym)
+        if writeErr, derr := writeResponse(s.conn, resp); writeErr != nil </span><span class="cov0" title="0">{
+                s.logDirectError("noproxy forward response", writeErr, target)
+                return false
+        }</span> else<span class="cov0" title="0"> if derr != nil </span><span class="cov0" title="0">{
+                slog.Debug("noproxy upstream body drain failed, closing connection", "error", derr, "target", target, "client_addr", s.clientAddr)
+                return false
+        }</span>
+        <span class="cov0" title="0">slog.Debug("noproxy HTTP response forwarding done", "target", target, "client_addr", s.clientAddr, "iter", iter)
+        return !connectionWillClose(req, resp)</span>
 }
 
 // tunnelDirect establishes a direct TCP tunnel to the target host,
@@ -926,7 +945,7 @@ func (s *ClientSession) forwardDirect(req *http.Request) <span class="cov0" titl
 func (s *ClientSession) tunnelDirect(req *http.Request) <span class="cov0" title="0">{
         targetConn, target, err := dialDirect(req.Host, "443", s.cfg.DialTimeout)
         if err != nil </span><span class="cov0" title="0">{
-                handleDialError(s.conn, err, target, s.clientAddr, "CONNECT")
+                s.handleDialError(err, target, "CONNECT")
                 return
         }</span>
         <span class="cov0" title="0">defer func() </span><span class="cov0" title="0">{ _ = targetConn.Close() }</span>()
@@ -939,13 +958,9 @@ func (s *ClientSession) tunnelDirect(req *http.Request) <span class="cov0" title
         }
         injectVia(resp.Header, req.Proto, s.cfg.Pseudonym)
         if err := writeConnectOK(s.conn, resp); err != nil </span><span class="cov0" title="0">{
-                if isExpectedCloseError(err) </span><span class="cov0" title="0">{
-                        slog.Debug("noproxy CONNECT response write closed", "error", err, "target", target, "client_addr", s.clientAddr)
-                }</span> else<span class="cov0" title="0"> {
-                        slog.Error("noproxy CONNECT response write failed", "error", err, "target", target, "client_addr", s.clientAddr)
-                }</span>
-                <span class="cov0" title="0">return</span>
-        }
+                s.logDirectError("noproxy CONNECT response write", err, target)
+                return
+        }</span>
 
         <span class="cov0" title="0">if s.cfg.KeepAlive &gt; 0 </span><span class="cov0" title="0">{
                 enableKeepAlive(s.conn, s.cfg.KeepAlive)
@@ -953,14 +968,7 @@ func (s *ClientSession) tunnelDirect(req *http.Request) <span class="cov0" title
         }</span>
 
         <span class="cov0" title="0">slog.Debug("noproxy CONNECT tunnel established", "target", target, "client_addr", s.clientAddr)
-        var wg sync.WaitGroup
-        wg.Go(func() </span><span class="cov0" title="0">{
-                forwardHalf(targetConn, s.reqReader, s.conn, s.conn.RemoteAddr(), targetConn.RemoteAddr(), s.cfg.IdleTimeout)
-        }</span>)
-        <span class="cov0" title="0">wg.Go(func() </span><span class="cov0" title="0">{
-                forwardHalf(s.conn, bufio.NewReader(targetConn), targetConn, targetConn.RemoteAddr(), s.conn.RemoteAddr(), s.cfg.IdleTimeout)
-        }</span>)
-        <span class="cov0" title="0">wg.Wait()</span>
+        forwardTunnel(s.conn, targetConn, s.reqReader, bufio.NewReader(targetConn), s.cfg.IdleTimeout)</span>
 }
 </pre>
 		
@@ -996,6 +1004,7 @@ type NegotiationError struct{ authError }
 		<pre class="file" id="file8" style="display: none">package proxy
 
 import (
+        "context"
         "errors"
         "fmt"
         "io"
@@ -1177,31 +1186,23 @@ func tokenErrorToProxyError(err error) *proxyError <span class="cov0" title="0">
 }
 
 // handleUpstreamResponseError handles errors from readUpstreamResponse.
-// For invalid Content-Length or malformed response headers it sends a 502
-// error to the client; for all other errors it falls back to raw-relaying
-// the upstream bytes.
+// It sends a 502 error to the client, logging invalid Content-Length or
+// malformed response headers at Error level and other parse failures at Warn.
 func handleUpstreamResponseError(conn, proxyConn net.Conn, err error, clientAddr string) <span class="cov0" title="0">{
-        if errors.Is(err, errContentLengthInvalid) </span><span class="cov0" title="0">{
-                slog.Error("invalid Content-Length in upstream response",
-                        "error", err, "error_type", errInvalidContentLength.errorType,
-                        "client_addr", clientAddr,
-                        "upstream_addr", proxyConn.RemoteAddr())
-                writeHTTPError(conn, errInvalidContentLength)
-                return
-        }</span>
-        <span class="cov0" title="0">if errors.Is(err, errMalformedResponse) </span><span class="cov0" title="0">{
-                slog.Error("malformed upstream response header",
-                        "error", err, "error_type", errMalformedResponseHeader.errorType,
-                        "client_addr", clientAddr,
-                        "upstream_addr", proxyConn.RemoteAddr())
-                writeHTTPError(conn, errMalformedResponseHeader)
-                return
-        }</span>
-        <span class="cov0" title="0">slog.Warn("unparseable upstream response",
-                "error", err, "error_type", errUnparseableResponse.errorType,
+        pe := errUnparseableResponse
+        message := "unparseable upstream response"
+        level := slog.LevelWarn
+        switch </span>{
+        case errors.Is(err, errContentLengthInvalid):<span class="cov0" title="0">
+                pe, message, level = errInvalidContentLength, "invalid Content-Length in upstream response", slog.LevelError</span>
+        case errors.Is(err, errMalformedResponse):<span class="cov0" title="0">
+                pe, message, level = errMalformedResponseHeader, "malformed upstream response header", slog.LevelError</span>
+        }
+        <span class="cov0" title="0">slog.Log(context.Background(), level, message,
+                "error", err, "error_type", pe.errorType,
                 "client_addr", clientAddr,
                 "upstream_addr", proxyConn.RemoteAddr())
-        writeHTTPError(conn, errUnparseableResponse)</span>
+        writeHTTPError(conn, pe)</span>
 }
 </pre>
 		
@@ -1209,7 +1210,6 @@ func handleUpstreamResponseError(conn, proxyConn net.Conn, err error, clientAddr
 
 import (
         "bufio"
-        "errors"
         "io"
         "log/slog"
         "net"
@@ -1257,27 +1257,41 @@ func (s *ClientSession) validateRequest(req *http.Request) (proceed bool, pe *pr
         }
 
         // G1 (RFC 9110 §7.6.2): TRACE/OPTIONS Max-Forwards.
-        <span class="cov0" title="0">if req.Method == http.MethodTrace || req.Method == http.MethodOptions </span><span class="cov0" title="0">{
-                if mf := req.Header.Get(headerMaxForwards); mf != "" </span><span class="cov0" title="0">{
-                        n, err := strconv.Atoi(mf)
-                        switch </span>{
-                        case err != nil:<span class="cov0" title="0">
-                                slog.Debug("non-numeric Max-Forwards value, forwarding unmodified", "max_forwards", mf, "client_addr", s.clientAddr)</span>
-                        case n &lt;= 0:<span class="cov0" title="0">
-                                slog.Debug("Max-Forwards: 0, responding locally", "method", req.Method, "client_addr", s.clientAddr)
-                                writeMaxForwardsResponse(s.conn, req)
-                                return false, nil</span>
-                        default:<span class="cov0" title="0">
-                                req.Header.Set(headerMaxForwards, strconv.Itoa(n-1))</span>
-                        }
-                }
-        }
+        <span class="cov0" title="0">if !s.applyMaxForwards(req) </span><span class="cov0" title="0">{
+                return false, nil
+        }</span>
 
         // Hop-by-hop sanitisation (RFC 9110 §7.6.1) — runs on every
         // iteration so a smuggled Proxy-Authorization cannot ride an
         // already-authenticated upstream connection.
         <span class="cov0" title="0">sanitizeHopByHop(req)
         return true, nil</span>
+}
+
+// applyMaxForwards implements the G1 (RFC 9110 §7.6.2) Max-Forwards rule for
+// TRACE and OPTIONS: decrement the header when it carries a positive count,
+// leave a non-numeric value untouched, and answer locally when the count has
+// reached zero. It reports whether the request should still be forwarded;
+// false means a local response has already been written.
+func (s *ClientSession) applyMaxForwards(req *http.Request) bool <span class="cov0" title="0">{
+        if req.Method != http.MethodTrace &amp;&amp; req.Method != http.MethodOptions </span><span class="cov0" title="0">{
+                return true
+        }</span>
+        <span class="cov0" title="0">mf := req.Header.Get(headerMaxForwards)
+        if mf == "" </span><span class="cov0" title="0">{
+                return true
+        }</span>
+        <span class="cov0" title="0">switch n, err := strconv.Atoi(mf); </span>{
+        case err != nil:<span class="cov0" title="0">
+                slog.Debug("non-numeric Max-Forwards value, forwarding unmodified", "max_forwards", mf, "client_addr", s.clientAddr)</span>
+        case n &lt;= 0:<span class="cov0" title="0">
+                slog.Debug("Max-Forwards: 0, responding locally", "method", req.Method, "client_addr", s.clientAddr)
+                writeMaxForwardsResponse(s.conn, req)
+                return false</span>
+        default:<span class="cov0" title="0">
+                req.Header.Set(headerMaxForwards, strconv.Itoa(n-1))</span>
+        }
+        <span class="cov0" title="0">return true</span>
 }
 
 // connectionWillClose reports whether either side has signalled that the
@@ -1313,16 +1327,9 @@ func (s *ClientSession) dialAndAuthUpstream(req *http.Request) net.Conn <span cl
 
         proxyConn, derr := dialUpstream(s.cfg.Upstream, s.cfg.UpstreamTLS)
         if derr != nil </span><span class="cov0" title="0">{
-                var ne net.Error
-                if errors.As(derr, &amp;ne) &amp;&amp; ne.Timeout() </span><span class="cov0" title="0">{
-                        slog.Error("failed to connect to proxy", "error", derr, "error_type", errConnectionTimeout.errorType, "client_addr", s.clientAddr, "upstream_addr", s.cfg.Upstream)
-                        writeHTTPError(s.conn, errConnectionTimeout)
-                }</span> else<span class="cov0" title="0"> {
-                        slog.Error("failed to connect to proxy", "error", derr, "error_type", errConnectionRefused.errorType, "client_addr", s.clientAddr, "upstream_addr", s.cfg.Upstream)
-                        writeHTTPError(s.conn, errConnectionRefused)
-                }</span>
-                <span class="cov0" title="0">return nil</span>
-        }
+                s.handleDialError(derr, s.cfg.Upstream, "")
+                return nil
+        }</span>
         <span class="cov0" title="0">if s.cfg.KeepAlive &gt; 0 </span><span class="cov0" title="0">{
                 enableKeepAlive(s.conn, s.cfg.KeepAlive)
                 enableKeepAlive(proxyConn, s.cfg.KeepAlive)
@@ -1397,22 +1404,10 @@ func handleClient(conn net.Conn, cfg Config) <span class="cov0" title="0">{
 // returns, preserving the issue #75 LIFO ordering.
 func (s *ClientSession) run() <span class="cov0" title="0">{
         for iter := 0; ; iter++ </span><span class="cov0" title="0">{
-                _ = s.conn.SetReadDeadline(time.Now().Add(s.cfg.ReadTimeout))
-                req, err := http.ReadRequest(s.reqReader)
-                _ = s.conn.SetReadDeadline(time.Time{})
-                if err != nil </span><span class="cov0" title="0">{
-                        if iter == 0 </span><span class="cov0" title="0">{
-                                if isExpectedCloseError(err) </span><span class="cov0" title="0">{
-                                        slog.Debug("client connection closed before request", "error", err, "client_addr", s.clientAddr)
-                                }</span> else<span class="cov0" title="0"> {
-                                        slog.Error("failed to read request", "error", err, "error_type", errHTTPRequestError.errorType, "client_addr", s.clientAddr)
-                                        writeHTTPError(s.conn, errHTTPRequestError)
-                                }</span>
-                        } else<span class="cov0" title="0"> {
-                                slog.Debug("keep-alive loop ended", "error", err, "iter", iter, "client_addr", s.clientAddr)
-                        }</span>
-                        <span class="cov0" title="0">return</span>
-                }
+                req := s.readNextRequest(iter)
+                if req == nil </span><span class="cov0" title="0">{
+                        return
+                }</span>
 
                 <span class="cov0" title="0">proceed, pe := s.validateRequest(req)
                 if !proceed </span><span class="cov0" title="0">{
@@ -1422,82 +1417,108 @@ func (s *ClientSession) run() <span class="cov0" title="0">{
                         <span class="cov0" title="0">return</span>
                 }
 
-                // Noproxy bypass — direct dial to the target. Terminates the
-                // keep-alive loop because the authenticated upstream connection
-                // (if any) cannot serve a direct-dial request.
-                <span class="cov0" title="0">matched, pattern := false, ""
-                if s.cfg.NoProxy != nil </span><span class="cov0" title="0">{
-                        matched, pattern = s.cfg.NoProxy.Match(req.Host)
+                // Noproxy bypass and CONNECT-via-upstream both terminate the
+                // keep-alive loop: neither can share the authenticated upstream
+                // connection with further HTTP requests.
+                <span class="cov0" title="0">if s.routeNoProxy(req) </span><span class="cov0" title="0">{
+                        return
                 }</span>
-                <span class="cov0" title="0">if matched </span><span class="cov0" title="0">{
-                        slog.Debug("noproxy bypass", "host", req.Host, "pattern", pattern, "method", req.Method, "client_addr", s.clientAddr)
-                        if req.Method == http.MethodConnect </span><span class="cov0" title="0">{
-                                s.tunnelDirect(req)
-                        }</span> else<span class="cov0" title="0"> {
-                                injectVia(req.Header, req.Proto, s.cfg.Pseudonym)
-                                s.forwardDirect(req)
-                        }</span>
-                        <span class="cov0" title="0">return</span>
-                }
-
-                // CONNECT via upstream proxy — tunnel mode terminates the loop.
-                // A CONNECT request always dials a fresh upstream connection
-                // because a tunnel co-opts the connection for opaque bytes; it
-                // cannot share with prior HTTP responses on the keep-alive
-                // connection.
                 <span class="cov0" title="0">if req.Method == http.MethodConnect </span><span class="cov0" title="0">{
                         s.tunnelViaUpstream(req)
                         return
                 }</span>
 
-                // Plain HTTP through upstream proxy. Lazy-dial on the first
-                // non-CONNECT, non-noproxy request; reuse the SPNEGO-authenticated
-                // connection on subsequent requests (RFC 4559 §5).
-                <span class="cov0" title="0">injectForwardingHeaders(req, s.clientAddr, s.cfg.Forwarding)
-                if s.proxyConn == nil </span><span class="cov0" title="0">{
-                        s.proxyConn = s.dialAndAuthUpstream(req)
-                        if s.proxyConn == nil </span><span class="cov0" title="0">{
-                                return
-                        }</span>
-                        <span class="cov0" title="0">s.upstreamReader = bufio.NewReader(s.proxyConn)</span>
-                }
-                <span class="cov0" title="0">injectVia(req.Header, req.Proto, s.cfg.Pseudonym)
-
-                slog.Debug("proxy request", "method", req.Method, "uri", req.RequestURI, "proto", req.Proto, "headers", len(req.Header), "client_addr", s.clientAddr, "upstream_addr", s.cfg.Upstream, "via", req.Header.Get(headerVia), "iter", iter)
-                if err := req.WriteProxy(s.proxyConn); err != nil </span><span class="cov0" title="0">{
-                        slog.Error("failed to write request to proxy", "error", err, "error_type", errConnectionTerminated.errorType, "client_addr", s.clientAddr, "upstream_addr", s.cfg.Upstream, "method", req.Method, "host", req.Host)
-                        writeHTTPError(s.conn, errConnectionTerminated)
-                        return
-                }</span>
-
-                <span class="cov0" title="0">resp, err := readUpstreamResponse(s.upstreamReader, req, s.cfg.Pseudonym)
-                if err != nil </span><span class="cov0" title="0">{
-                        handleUpstreamResponseError(s.conn, s.proxyConn, err, s.clientAddr)
-                        return
-                }</span>
-
-                <span class="cov0" title="0">writeErr := resp.Write(s.conn)
-                if writeErr != nil </span><span class="cov0" title="0">{
-                        _ = resp.Body.Close()
-                        logForwardError(writeErr, s.proxyConn.RemoteAddr(), s.conn.RemoteAddr())
-                        return
-                }</span>
-                // Drain any unread body so upstreamReader is aligned for the
-                // next iteration; resp.Write already consumed it for well-framed
-                // responses. If the drain fails the reader may be mid-body and
-                // reusing it for the next request risks response misframing —
-                // close the connection instead of continuing the keep-alive loop.
-                <span class="cov0" title="0">if _, derr := io.Copy(io.Discard, resp.Body); derr != nil </span><span class="cov0" title="0">{
-                        _ = resp.Body.Close()
-                        slog.Debug("upstream body drain failed, closing connection", "error", derr, "client_addr", s.clientAddr, "upstream_addr", s.cfg.Upstream)
-                        return
-                }</span>
-                <span class="cov0" title="0">_ = resp.Body.Close()
-
-                if connectionWillClose(req, resp) </span><span class="cov0" title="0">{
+                <span class="cov0" title="0">if !s.relayViaUpstream(req, iter) </span><span class="cov0" title="0">{
                         return
                 }</span>
         }
+}
+
+// readNextRequest reads the next request from the client connection under
+// the read timeout. It returns nil when no further request will arrive:
+// iteration 0 distinguishes an expected close from a malformed request (and
+// answers the latter with a 400), while a failure on a later iteration just
+// ends the keep-alive loop.
+func (s *ClientSession) readNextRequest(iter int) *http.Request <span class="cov0" title="0">{
+        _ = s.conn.SetReadDeadline(time.Now().Add(s.cfg.ReadTimeout))
+        req, err := http.ReadRequest(s.reqReader)
+        _ = s.conn.SetReadDeadline(time.Time{})
+        if err == nil </span><span class="cov0" title="0">{
+                return req
+        }</span>
+        <span class="cov0" title="0">switch </span>{
+        case iter &gt; 0:<span class="cov0" title="0">
+                slog.Debug("keep-alive loop ended", "error", err, "iter", iter, "client_addr", s.clientAddr)</span>
+        case isExpectedCloseError(err):<span class="cov0" title="0">
+                slog.Debug("client connection closed before request", "error", err, "client_addr", s.clientAddr)</span>
+        default:<span class="cov0" title="0">
+                slog.Error("failed to read request", "error", err, "error_type", errHTTPRequestError.errorType, "client_addr", s.clientAddr)
+                writeHTTPError(s.conn, errHTTPRequestError)</span>
+        }
+        <span class="cov0" title="0">return nil</span>
+}
+
+// routeNoProxy handles a request whose host matches the noproxy matcher by
+// dialling the target directly, bypassing the upstream proxy and SPNEGO. It
+// reports whether it took the request; false means the caller must route it
+// via the upstream proxy.
+func (s *ClientSession) routeNoProxy(req *http.Request) bool <span class="cov0" title="0">{
+        if s.cfg.NoProxy == nil </span><span class="cov0" title="0">{
+                return false
+        }</span>
+        <span class="cov0" title="0">matched, pattern := s.cfg.NoProxy.Match(req.Host)
+        if !matched </span><span class="cov0" title="0">{
+                return false
+        }</span>
+        <span class="cov0" title="0">slog.Debug("noproxy bypass", "host", req.Host, "pattern", pattern, "method", req.Method, "client_addr", s.clientAddr)
+        if req.Method == http.MethodConnect </span><span class="cov0" title="0">{
+                s.tunnelDirect(req)
+                return true
+        }</span>
+        <span class="cov0" title="0">injectVia(req.Header, req.Proto, s.cfg.Pseudonym)
+        s.forwardDirect(req)
+        return true</span>
+}
+
+// relayViaUpstream forwards one plain-HTTP request through the upstream
+// proxy and relays the response to the client. The upstream connection is
+// lazy-dialled on the first such request and the SPNEGO-authenticated
+// connection is reused on subsequent ones (RFC 4559 §5). It reports whether
+// the client connection may carry a further request; false means it must be
+// closed, either because of an error or because a side signalled close.
+func (s *ClientSession) relayViaUpstream(req *http.Request, iter int) bool <span class="cov0" title="0">{
+        injectForwardingHeaders(req, s.clientAddr, s.cfg.Forwarding)
+        if s.proxyConn == nil </span><span class="cov0" title="0">{
+                s.proxyConn = s.dialAndAuthUpstream(req)
+                if s.proxyConn == nil </span><span class="cov0" title="0">{
+                        return false
+                }</span>
+                <span class="cov0" title="0">s.upstreamReader = bufio.NewReader(s.proxyConn)</span>
+        }
+        <span class="cov0" title="0">injectVia(req.Header, req.Proto, s.cfg.Pseudonym)
+
+        slog.Debug("proxy request", "method", req.Method, "uri", req.RequestURI, "proto", req.Proto, "headers", len(req.Header), "client_addr", s.clientAddr, "upstream_addr", s.cfg.Upstream, "via", req.Header.Get(headerVia), "iter", iter)
+        if err := req.WriteProxy(s.proxyConn); err != nil </span><span class="cov0" title="0">{
+                slog.Error("failed to write request to proxy", "error", err, "error_type", errConnectionTerminated.errorType, "client_addr", s.clientAddr, "upstream_addr", s.cfg.Upstream, "method", req.Method, "host", req.Host)
+                writeHTTPError(s.conn, errConnectionTerminated)
+                return false
+        }</span>
+
+        <span class="cov0" title="0">resp, err := readUpstreamResponse(s.upstreamReader, req, s.cfg.Pseudonym)
+        if err != nil </span><span class="cov0" title="0">{
+                handleUpstreamResponseError(s.conn, s.proxyConn, err, s.clientAddr)
+                return false
+        }</span>
+
+        <span class="cov0" title="0">if writeErr, derr := writeResponse(s.conn, resp); writeErr != nil </span><span class="cov0" title="0">{
+                logForwardError(writeErr, s.proxyConn.RemoteAddr(), s.conn.RemoteAddr())
+                return false
+        }</span> else<span class="cov0" title="0"> if derr != nil </span><span class="cov0" title="0">{
+                slog.Debug("upstream body drain failed, closing connection", "error", derr, "client_addr", s.clientAddr, "upstream_addr", s.cfg.Upstream)
+                return false
+        }</span>
+
+        <span class="cov0" title="0">return !connectionWillClose(req, resp)</span>
 }
 
 // tunnelViaUpstream performs the CONNECT-via-upstream-proxy flow:
@@ -1526,6 +1547,17 @@ func (s *ClientSession) tunnelViaUpstream(req *http.Request) <span class="cov0" 
         }</span>
 
         <span class="cov0" title="0">handleConnectTunnel(s.conn, proxyConn, s.reqReader, req, s.cfg.Pseudonym, s.clientAddr, s.cfg.IdleTimeout)</span>
+}
+
+// writeResponse writes and drains a response, closing its body before returning.
+// Separate errors let each caller preserve its write and drain diagnostics.
+// A drain failure leaves the peer reader misaligned, so callers must stop reuse.
+func writeResponse(conn net.Conn, resp *http.Response) (writeErr, drainErr error) <span class="cov0" title="0">{
+        if writeErr = resp.Write(conn); writeErr == nil </span><span class="cov0" title="0">{
+                _, drainErr = io.Copy(io.Discard, resp.Body)
+        }</span>
+        <span class="cov0" title="0">_ = resp.Body.Close()
+        return</span>
 }
 </pre>
 		
@@ -1663,19 +1695,18 @@ func sanitizeHopByHop(req *http.Request) <span class="cov0" title="0">{
                         }</span>
                 }
         }
-        <span class="cov0" title="0">header.Del(headerConnection)
 
         // Well-known hop-by-hop headers (RFC 9110 §7.6.1, RFC 9113 §8.2.2).
-        header.Del(headerKeepAlive)
-        header.Del(headerProxyConnection) // K3: non-standard hop-by-hop
-        header.Del(headerTE)
-        header.Del(headerTrailer)
-        req.Trailer = nil         // ReadRequest moves Trailer into this field
-        header.Del(headerUpgrade) // J2: strip unless proxy supports the protocol
-
-        // B2 (RFC 9110 §11.7.1): consume the client's Proxy-Authorization.
-        // The proxy injects its own SPNEGO token after this function returns.
-        header.Del(headerProxyAuthorization)
+        // Includes non-standard Proxy-Connection (K3) and unsupported Upgrade (J2).
+        // B2 (RFC 9110 §11.7.1): consume the client's Proxy-Authorization before
+        // the proxy injects its own SPNEGO token after this function returns.
+        <span class="cov0" title="0">for _, name := range []string{
+                headerConnection, headerKeepAlive, headerProxyConnection,
+                headerTE, headerTrailer, headerUpgrade, headerProxyAuthorization,
+        } </span><span class="cov0" title="0">{
+                header.Del(name)
+        }</span>
+        <span class="cov0" title="0">req.Trailer = nil // ReadRequest moves Trailer into this field
 
         // E1 (RFC 9112 §6.1): when both Transfer-Encoding and Content-Length
         // are present, remove Content-Length to prevent request smuggling.
@@ -1756,85 +1787,75 @@ type NoProxyMatcher struct {
 // NewNoProxyMatcher parses a comma-separated string of bypass patterns and
 // returns a ready-to-use NoProxyMatcher. Each pattern is classified at parse
 // time so that Match performs no allocations on the hot path.
-func NewNoProxyMatcher(patterns string) *NoProxyMatcher <span class="cov7" title="1022">{
+func NewNoProxyMatcher(patterns string) *NoProxyMatcher <span class="cov7" title="1018">{
         m := &amp;NoProxyMatcher{}
-        for pat := range strings.SplitSeq(patterns, ",") </span><span class="cov10" title="31140">{
-                pat = strings.TrimSpace(pat)
-                if pat == "" </span><span class="cov8" title="6730">{
-                        continue</span>
-                }
-                <span class="cov9" title="24410">rule := noProxyRule{raw: pat}
-                if pat == "*" </span><span class="cov6" title="428">{
+        for _, pat := range SplitCSV(patterns) </span><span class="cov10" title="24006">{
+                rule := noProxyRule{raw: pat}
+                if pat == "*" </span><span class="cov6" title="361">{
                         rule.kind = ruleAll
-                }</span> else<span class="cov9" title="23982"> if prefix, err := netip.ParsePrefix(pat); err == nil </span><span class="cov7" title="2360">{
+                }</span> else<span class="cov9" title="23645"> if prefix, err := netip.ParsePrefix(pat); err == nil </span><span class="cov7" title="2341">{
                         rule.kind = ruleCIDR
                         rule.prefix = prefix
-                }</span> else<span class="cov9" title="21622"> if ip, err := netip.ParseAddr(pat); err == nil </span><span class="cov7" title="3038">{
+                }</span> else<span class="cov9" title="21304"> if ip, err := netip.ParseAddr(pat); err == nil </span><span class="cov8" title="2969">{
                         rule.kind = ruleIP
                         rule.ip = ip
-                }</span> else<span class="cov9" title="18584"> if suffix, ok := strings.CutPrefix(pat, "*"); ok &amp;&amp; strings.HasPrefix(suffix, ".") </span><span class="cov6" title="337">{
+                }</span> else<span class="cov9" title="18335"> if suffix := strings.TrimPrefix(pat, "*"); strings.HasPrefix(suffix, ".") </span><span class="cov7" title="2439">{
                         rule.kind = ruleWildcard
                         // Normalize to a leading-dot suffix regardless of whether the
                         // caller wrote "*.corp.com" or ".corp.com".
                         rule.suffix = strings.ToLower(suffix)
-                }</span> else<span class="cov9" title="18247"> if strings.HasPrefix(pat, ".") </span><span class="cov7" title="2238">{
-                        rule.kind = ruleWildcard
-                        rule.suffix = strings.ToLower(pat)
-                }</span> else<span class="cov9" title="16009"> {
+                }</span> else<span class="cov9" title="15896"> {
                         rule.kind = ruleHostname
                         rule.host = strings.ToLower(pat)
                 }</span>
-                <span class="cov9" title="24410">m.rules = append(m.rules, rule)</span>
+                <span class="cov10" title="24006">m.rules = append(m.rules, rule)</span>
         }
-        <span class="cov7" title="1022">return m</span>
+        <span class="cov7" title="1018">return m</span>
+}
+
+// matches reports whether this single rule covers the given host. hostIP is
+// the host pre-parsed as an IP address (invalid when the host is a name); an
+// invalid Addr never equals a rule IP nor is contained by a rule prefix, so no
+// separate validity check is needed.
+func (r noProxyRule) matches(host string, hostIP netip.Addr) bool <span class="cov9" title="20791">{
+        switch r.kind </span>{
+        case ruleAll:<span class="cov4" title="32">
+                return true</span>
+        case ruleHostname:<span class="cov9" title="13778">
+                return host == r.host</span>
+        case ruleWildcard:<span class="cov7" title="2208">
+                // ".corp.com" matches the base domain "corp.com" and any subdomain.
+                return host == r.suffix[1:] || strings.HasSuffix(host, r.suffix)</span>
+        case ruleIP:<span class="cov8" title="2732">
+                return hostIP == r.ip</span>
+        default:<span class="cov7" title="2041"> // ruleCIDR
+                return r.prefix.Contains(hostIP)</span>
+        }
 }
 
 // Match reports whether host (with or without a port) is covered by any
 // bypass pattern. On a match it also returns the original pattern string so
 // callers can include it in debug log messages.
-func (m *NoProxyMatcher) Match(host string) (matched bool, pattern string) <span class="cov7" title="1022">{
+func (m *NoProxyMatcher) Match(host string) (matched bool, pattern string) <span class="cov7" title="1018">{
         // Strip port if present.
-        if h, _, err := net.SplitHostPort(host); err == nil </span><span class="cov4" title="50">{
+        if h, _, err := net.SplitHostPort(host); err == nil </span><span class="cov4" title="48">{
                 host = h
-        }</span> else<span class="cov6" title="972"> {
+        }</span> else<span class="cov7" title="970"> {
                 // Bare bracketed IPv6 literal with no port must lose its brackets to
                 // parse as an IP for IP/CIDR rule matching.
                 host = stripIPv6Brackets(host)
         }</span>
-        <span class="cov7" title="1022">host = strings.ToLower(host)
+        <span class="cov7" title="1018">host = strings.ToLower(host)
 
         // Try to parse as an IP once so we can use it for IP/CIDR rules.
         hostIP, _ := netip.ParseAddr(host)
 
-        for _, rule := range m.rules </span><span class="cov9" title="20813">{
-                switch rule.kind </span>{
-                case ruleAll:<span class="cov4" title="36">
-                        return true, rule.raw</span>
-                case ruleHostname:<span class="cov9" title="13703">
-                        if host == rule.host </span><span class="cov2" title="4">{
-                                return true, rule.raw
-                        }</span>
-                case ruleWildcard:<span class="cov7" title="2218">
-                        // Match the base domain itself (e.g. "corp.com" matches ".corp.com").
-                        base := rule.suffix[1:] // strip leading '.'
-                        if host == base </span><span class="cov3" title="16">{
-                                return true, rule.raw
-                        }</span>
-                        // Match any subdomain (e.g. "foo.corp.com" matches ".corp.com").
-                        <span class="cov7" title="2202">if strings.HasSuffix(host, rule.suffix) </span><span class="cov3" title="14">{
-                                return true, rule.raw
-                        }</span>
-                case ruleIP:<span class="cov7" title="2800">
-                        if hostIP.IsValid() &amp;&amp; hostIP == rule.ip </span><span class="cov3" title="11">{
-                                return true, rule.raw
-                        }</span>
-                case ruleCIDR:<span class="cov7" title="2056">
-                        if hostIP.IsValid() &amp;&amp; rule.prefix.Contains(hostIP) </span><span class="cov3" title="30">{
-                                return true, rule.raw
-                        }</span>
-                }
+        for _, rule := range m.rules </span><span class="cov9" title="20791">{
+                if rule.matches(host, hostIP) </span><span class="cov5" title="105">{
+                        return true, rule.raw
+                }</span>
         }
-        <span class="cov6" title="911">return false, ""</span>
+        <span class="cov7" title="913">return false, ""</span>
 }
 
 // ResolveNoProxy returns the effective no-proxy value by applying the
@@ -1889,11 +1910,11 @@ func logTECLConflict(direction string, te []string, cl string) <span class="cov0
 // splits them into two distinct headers — this is indistinguishable from
 // an intentional dual-header response and cannot be detected here.
 func validateResponseHeaderBytes(resp *http.Response) *proxyError <span class="cov5" title="270">{
-        for name, values := range resp.Header </span><span class="cov8" title="4602">{
+        for name, values := range resp.Header </span><span class="cov8" title="4386">{
                 if !isValidFieldName(name) </span><span class="cov3" title="24">{
                         return errMalformedResponseHeader
                 }</span>
-                <span class="cov8" title="4578">if slices.ContainsFunc(values, hasForbiddenFieldValueByte) </span><span class="cov1" title="3">{
+                <span class="cov8" title="4362">if slices.ContainsFunc(values, hasForbiddenFieldValueByte) </span><span class="cov1" title="3">{
                         return errMalformedResponseHeader
                 }</span>
         }
@@ -1903,26 +1924,26 @@ func validateResponseHeaderBytes(resp *http.Response) *proxyError <span class="c
 // isValidFieldName reports whether name contains only RFC 9110 §5.1 tchar
 // characters. Used to reject upstream response header names containing
 // control characters introduced via a response-splitting attempt.
-func isValidFieldName(name string) bool <span class="cov8" title="4676">{
-        if name == "" </span><span class="cov3" title="32">{
+func isValidFieldName(name string) bool <span class="cov8" title="4460">{
+        if name == "" </span><span class="cov4" title="32">{
                 return false
         }</span>
-        <span class="cov8" title="4644">for i := 0; i &lt; len(name); i++ </span><span class="cov9" title="21926">{
+        <span class="cov8" title="4428">for i := 0; i &lt; len(name); i++ </span><span class="cov9" title="20281">{
                 c := name[i]
                 switch </span>{
                 case c &gt;= 'a' &amp;&amp; c &lt;= 'z',
                         c &gt;= 'A' &amp;&amp; c &lt;= 'Z',
-                        c &gt;= '0' &amp;&amp; c &lt;= '9':<span class="cov9" title="17251">
+                        c &gt;= '0' &amp;&amp; c &lt;= '9':<span class="cov9" title="16021">
                         continue</span>
                 }
-                <span class="cov8" title="4675">switch c </span>{
+                <span class="cov8" title="4260">switch c </span>{
                 case '!', '#', '$', '%', '&amp;', '\'', '*', '+', '-', '.',
-                        '^', '_', '`', '|', '~':<span class="cov8" title="4663">
+                        '^', '_', '`', '|', '~':<span class="cov8" title="4248">
                         continue</span>
                 }
                 <span class="cov3" title="12">return false</span>
         }
-        <span class="cov8" title="4632">return true</span>
+        <span class="cov8" title="4416">return true</span>
 }
 
 // hasForbiddenFieldValueByte reports whether v contains any octet forbidden
@@ -1930,34 +1951,29 @@ func isValidFieldName(name string) bool <span class="cov8" title="4676">{
 // control characters (0x00-0x08, 0x0A-0x1F). HTAB (0x09) is permitted.
 // obs-text (0x80-0xFF) is also permitted because senders MAY emit it and
 // recipients SHOULD pass it through.
-func hasForbiddenFieldValueByte(v string) bool <span class="cov8" title="8929">{
-        for i := 0; i &lt; len(v); i++ </span><span class="cov10" title="36885">{
+func hasForbiddenFieldValueByte(v string) bool <span class="cov8" title="8436">{
+        for i := 0; i &lt; len(v); i++ </span><span class="cov10" title="31686">{
                 c := v[i]
-                if c == '\t' </span><span class="cov6" title="654">{
+                if c == '\t' </span><span class="cov6" title="650">{
                         continue</span>
                 }
-                <span class="cov9" title="36231">if c &lt; 0x20 || c == 0x7F </span><span class="cov2" title="7">{
+                <span class="cov9" title="31036">if c &lt; 0x20 || c == 0x7F </span><span class="cov2" title="7">{
                         return true
                 }</span>
         }
-        <span class="cov8" title="8922">return false</span>
+        <span class="cov8" title="8429">return false</span>
 }
 
 // validateResponseContentLength checks the upstream response for invalid
 // Content-Length values per RFC 9112 §6.1. It returns a non-nil *proxyError
 // when the response must be rejected with 502.
 func validateResponseContentLength(resp *http.Response) *proxyError <span class="cov6" title="345">{
-        clValues := resp.Header[headerContentLength]
-        if len(clValues) == 0 </span><span class="cov5" title="194">{
-                return nil
-        }</span>
-
         // Collect all individual values; headers may be comma-separated per
         // RFC 9110 §5.6.1. Compare numerically so that semantically equal
         // values like "042" and "42" are not rejected.
-        <span class="cov5" title="151">var first uint64
+        var first uint64
         var seen bool
-        for _, v := range clValues </span><span class="cov6" title="934">{
+        for _, v := range resp.Header[headerContentLength] </span><span class="cov6" title="934">{
                 for part := range strings.SplitSeq(v, ",") </span><span class="cov7" title="1256">{
                         part = strings.TrimSpace(part)
                         if part == "" </span><span class="cov6" title="667">{
@@ -1975,7 +1991,7 @@ func validateResponseContentLength(resp *http.Response) *proxyError <span class=
                         }</span>
                 }
         }
-        <span class="cov4" title="93">return nil</span>
+        <span class="cov5" title="287">return nil</span>
 }
 
 // errContentLengthInvalid is a sentinel error returned by readUpstreamResponse
