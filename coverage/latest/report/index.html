@@ -441,37 +441,37 @@ type TokenProvider interface {
 }
 
 // SplitCSV splits a comma-separated string into trimmed, non-empty tokens.
-func SplitCSV(s string) []string <span class="cov7" title="1851">{
+func SplitCSV(s string) []string <span class="cov7" title="1848">{
         var out []string
-        for part := range strings.SplitSeq(s, ",") </span><span class="cov10" title="41863">{
-                if part = strings.TrimSpace(part); part != "" </span><span class="cov9" title="33583">{
+        for part := range strings.SplitSeq(s, ",") </span><span class="cov10" title="41895">{
+                if part = strings.TrimSpace(part); part != "" </span><span class="cov9" title="33737">{
                         out = append(out, part)
                 }</span>
         }
-        <span class="cov7" title="1851">return out</span>
+        <span class="cov7" title="1848">return out</span>
 }
 
 // ParseAllowList parses a comma-separated string of IPs and CIDR ranges
 // into a slice of *net.IPNet entries for use with ipAllowed.
-func ParseAllowList(s string) ([]*net.IPNet, error) <span class="cov6" title="551">{
+func ParseAllowList(s string) ([]*net.IPNet, error) <span class="cov6" title="549">{
         var nets []*net.IPNet
-        for _, entry := range SplitCSV(s) </span><span class="cov8" title="4694">{
-                if strings.Contains(entry, "/") </span><span class="cov7" title="1620">{
+        for _, entry := range SplitCSV(s) </span><span class="cov8" title="4570">{
+                if strings.Contains(entry, "/") </span><span class="cov7" title="1516">{
                         _, ipNet, err := net.ParseCIDR(entry)
-                        if err != nil </span><span class="cov2" title="8">{
+                        if err != nil </span><span class="cov2" title="7">{
                                 return nil, fmt.Errorf("invalid CIDR %q: %w", entry, err)
                         }</span>
-                        <span class="cov7" title="1612">nets = append(nets, ipNet)</span>
-                } else<span class="cov7" title="3074"> {
+                        <span class="cov7" title="1509">nets = append(nets, ipNet)</span>
+                } else<span class="cov7" title="3054"> {
                         ip := net.ParseIP(entry)
-                        if ip == nil </span><span class="cov5" title="347">{
+                        if ip == nil </span><span class="cov5" title="346">{
                                 return nil, fmt.Errorf("invalid IP address: %q", entry)
                         }</span>
-                        <span class="cov7" title="2727">bits := 32
+                        <span class="cov7" title="2708">bits := 32
                         if ip.To4() == nil </span><span class="cov7" title="2233">{
                                 bits = 128
                         }</span>
-                        <span class="cov7" title="2727">nets = append(nets, &amp;net.IPNet{IP: ip, Mask: net.CIDRMask(bits, bits)})</span>
+                        <span class="cov7" title="2708">nets = append(nets, &amp;net.IPNet{IP: ip, Mask: net.CIDRMask(bits, bits)})</span>
                 }
         }
         <span class="cov5" title="196">return nets, nil</span>
@@ -479,8 +479,8 @@ func ParseAllowList(s string) ([]*net.IPNet, error) <span class="cov6" title="55
 
 // ipAllowed returns true if the given IP is in the allow list.
 // A nil or empty allow list permits all IPs.
-func ipAllowed(ip net.IP, allowList []*net.IPNet) bool <span class="cov6" title="551">{
-        if len(allowList) == 0 </span><span class="cov6" title="408">{
+func ipAllowed(ip net.IP, allowList []*net.IPNet) bool <span class="cov6" title="549">{
+        if len(allowList) == 0 </span><span class="cov6" title="406">{
                 return true
         }</span>
         // RFC 4291: an IPv4-mapped IPv6 address denotes the same host as the bare
@@ -677,11 +677,11 @@ import (
 
 // extractHost returns the host portion of addr, stripping any port suffix.
 // If addr has no port, it is returned unchanged.
-func extractHost(addr string) string <span class="cov10" title="551">{
+func extractHost(addr string) string <span class="cov10" title="549">{
         if h, _, err := net.SplitHostPort(addr); err == nil </span><span class="cov5" title="20">{
                 return h
         }</span>
-        <span class="cov9" title="531">return addr</span>
+        <span class="cov9" title="529">return addr</span>
 }
 
 // UpstreamTLSConfig holds optional TLS settings for the upstream proxy connection.
@@ -759,11 +759,11 @@ import (
 // IPv6 literal that has no port (e.g. "[::1]" -&gt; "::1"). It is a no-op for any
 // other input. Used on host-canonicalisation paths where net.SplitHostPort has
 // already failed (no port present).
-func stripIPv6Brackets(host string) string <span class="cov10" title="2706">{
+func stripIPv6Brackets(host string) string <span class="cov10" title="2699">{
         if strings.HasPrefix(host, "[") &amp;&amp; strings.HasSuffix(host, "]") </span><span class="cov5" title="42">{
                 return host[1 : len(host)-1]
         }</span>
-        <span class="cov9" title="2664">return host</span>
+        <span class="cov9" title="2657">return host</span>
 }
 
 // sameHost reports whether two HTTP Host values refer to the same
@@ -771,19 +771,19 @@ func stripIPv6Brackets(host string) string <span class="cov10" title="2706">{
 // host has no explicit port. Bracketed IPv6 addresses without a port (e.g.
 // "[::1]") are normalised to "[::1]:&lt;defaultPort&gt;" so they match the same
 // IPv6 address written with an explicit port.
-func sameHost(a, b, defaultPort string) bool <span class="cov8" title="927">{
-        canon := func(h string) string </span><span class="cov9" title="1854">{
+func sameHost(a, b, defaultPort string) bool <span class="cov8" title="924">{
+        canon := func(h string) string </span><span class="cov9" title="1848">{
                 h = strings.ToLower(strings.TrimSpace(h))
                 host, port, err := net.SplitHostPort(h)
-                if err != nil </span><span class="cov9" title="1736">{
+                if err != nil </span><span class="cov9" title="1730">{
                         host = h
                         port = defaultPort
                         // Strip brackets so net.JoinHostPort below re-adds them once.
                         host = stripIPv6Brackets(host)
                 }</span>
-                <span class="cov9" title="1854">return net.JoinHostPort(host, port)</span>
+                <span class="cov9" title="1848">return net.JoinHostPort(host, port)</span>
         }
-        <span class="cov8" title="927">return canon(a) == canon(b)</span>
+        <span class="cov8" title="924">return canon(a) == canon(b)</span>
 }
 
 // dialDirect dials a target host directly, defaulting to defaultPort when
@@ -1787,48 +1787,48 @@ type NoProxyMatcher struct {
 // NewNoProxyMatcher parses a comma-separated string of bypass patterns and
 // returns a ready-to-use NoProxyMatcher. Each pattern is classified at parse
 // time so that Match performs no allocations on the hot path.
-func NewNoProxyMatcher(patterns string) *NoProxyMatcher <span class="cov7" title="1018">{
+func NewNoProxyMatcher(patterns string) *NoProxyMatcher <span class="cov7" title="1017">{
         m := &amp;NoProxyMatcher{}
-        for _, pat := range SplitCSV(patterns) </span><span class="cov10" title="24006">{
+        for _, pat := range SplitCSV(patterns) </span><span class="cov10" title="24405">{
                 rule := noProxyRule{raw: pat}
-                if pat == "*" </span><span class="cov6" title="361">{
+                if pat == "*" </span><span class="cov6" title="358">{
                         rule.kind = ruleAll
-                }</span> else<span class="cov9" title="23645"> if prefix, err := netip.ParsePrefix(pat); err == nil </span><span class="cov7" title="2341">{
+                }</span> else<span class="cov9" title="24047"> if prefix, err := netip.ParsePrefix(pat); err == nil </span><span class="cov7" title="2307">{
                         rule.kind = ruleCIDR
                         rule.prefix = prefix
-                }</span> else<span class="cov9" title="21304"> if ip, err := netip.ParseAddr(pat); err == nil </span><span class="cov8" title="2969">{
+                }</span> else<span class="cov9" title="21740"> if ip, err := netip.ParseAddr(pat); err == nil </span><span class="cov8" title="2725">{
                         rule.kind = ruleIP
                         rule.ip = ip
-                }</span> else<span class="cov9" title="18335"> if suffix := strings.TrimPrefix(pat, "*"); strings.HasPrefix(suffix, ".") </span><span class="cov7" title="2439">{
+                }</span> else<span class="cov9" title="19015"> if suffix := strings.TrimPrefix(pat, "*"); strings.HasPrefix(suffix, ".") </span><span class="cov7" title="2541">{
                         rule.kind = ruleWildcard
                         // Normalize to a leading-dot suffix regardless of whether the
                         // caller wrote "*.corp.com" or ".corp.com".
                         rule.suffix = strings.ToLower(suffix)
-                }</span> else<span class="cov9" title="15896"> {
+                }</span> else<span class="cov9" title="16474"> {
                         rule.kind = ruleHostname
                         rule.host = strings.ToLower(pat)
                 }</span>
-                <span class="cov10" title="24006">m.rules = append(m.rules, rule)</span>
+                <span class="cov10" title="24405">m.rules = append(m.rules, rule)</span>
         }
-        <span class="cov7" title="1018">return m</span>
+        <span class="cov7" title="1017">return m</span>
 }
 
 // matches reports whether this single rule covers the given host. hostIP is
 // the host pre-parsed as an IP address (invalid when the host is a name); an
 // invalid Addr never equals a rule IP nor is contained by a rule prefix, so no
 // separate validity check is needed.
-func (r noProxyRule) matches(host string, hostIP netip.Addr) bool <span class="cov9" title="20791">{
+func (r noProxyRule) matches(host string, hostIP netip.Addr) bool <span class="cov9" title="21200">{
         switch r.kind </span>{
         case ruleAll:<span class="cov4" title="32">
                 return true</span>
-        case ruleHostname:<span class="cov9" title="13778">
+        case ruleHostname:<span class="cov9" title="14360">
                 return host == r.host</span>
-        case ruleWildcard:<span class="cov7" title="2208">
+        case ruleWildcard:<span class="cov7" title="2312">
                 // ".corp.com" matches the base domain "corp.com" and any subdomain.
                 return host == r.suffix[1:] || strings.HasSuffix(host, r.suffix)</span>
-        case ruleIP:<span class="cov8" title="2732">
+        case ruleIP:<span class="cov7" title="2489">
                 return hostIP == r.ip</span>
-        default:<span class="cov7" title="2041"> // ruleCIDR
+        default:<span class="cov7" title="2007"> // ruleCIDR
                 return r.prefix.Contains(hostIP)</span>
         }
 }
@@ -1836,26 +1836,26 @@ func (r noProxyRule) matches(host string, hostIP netip.Addr) bool <span class="c
 // Match reports whether host (with or without a port) is covered by any
 // bypass pattern. On a match it also returns the original pattern string so
 // callers can include it in debug log messages.
-func (m *NoProxyMatcher) Match(host string) (matched bool, pattern string) <span class="cov7" title="1018">{
+func (m *NoProxyMatcher) Match(host string) (matched bool, pattern string) <span class="cov7" title="1017">{
         // Strip port if present.
         if h, _, err := net.SplitHostPort(host); err == nil </span><span class="cov4" title="48">{
                 host = h
-        }</span> else<span class="cov7" title="970"> {
+        }</span> else<span class="cov7" title="969"> {
                 // Bare bracketed IPv6 literal with no port must lose its brackets to
                 // parse as an IP for IP/CIDR rule matching.
                 host = stripIPv6Brackets(host)
         }</span>
-        <span class="cov7" title="1018">host = strings.ToLower(host)
+        <span class="cov7" title="1017">host = strings.ToLower(host)
 
         // Try to parse as an IP once so we can use it for IP/CIDR rules.
         hostIP, _ := netip.ParseAddr(host)
 
-        for _, rule := range m.rules </span><span class="cov9" title="20791">{
+        for _, rule := range m.rules </span><span class="cov9" title="21200">{
                 if rule.matches(host, hostIP) </span><span class="cov5" title="105">{
                         return true, rule.raw
                 }</span>
         }
-        <span class="cov7" title="913">return false, ""</span>
+        <span class="cov7" title="912">return false, ""</span>
 }
 
 // ResolveNoProxy returns the effective no-proxy value by applying the
@@ -1909,41 +1909,41 @@ func logTECLConflict(direction string, te []string, cl string) <span class="cov0
 // followed by another well-formed "Name: value" pair, Go's textproto parser
 // splits them into two distinct headers — this is indistinguishable from
 // an intentional dual-header response and cannot be detected here.
-func validateResponseHeaderBytes(resp *http.Response) *proxyError <span class="cov5" title="270">{
-        for name, values := range resp.Header </span><span class="cov8" title="4386">{
+func validateResponseHeaderBytes(resp *http.Response) *proxyError <span class="cov5" title="269">{
+        for name, values := range resp.Header </span><span class="cov8" title="4472">{
                 if !isValidFieldName(name) </span><span class="cov3" title="24">{
                         return errMalformedResponseHeader
                 }</span>
-                <span class="cov8" title="4362">if slices.ContainsFunc(values, hasForbiddenFieldValueByte) </span><span class="cov1" title="3">{
+                <span class="cov8" title="4448">if slices.ContainsFunc(values, hasForbiddenFieldValueByte) </span><span class="cov1" title="3">{
                         return errMalformedResponseHeader
                 }</span>
         }
-        <span class="cov5" title="243">return nil</span>
+        <span class="cov5" title="242">return nil</span>
 }
 
 // isValidFieldName reports whether name contains only RFC 9110 §5.1 tchar
 // characters. Used to reject upstream response header names containing
 // control characters introduced via a response-splitting attempt.
-func isValidFieldName(name string) bool <span class="cov8" title="4460">{
+func isValidFieldName(name string) bool <span class="cov8" title="4546">{
         if name == "" </span><span class="cov4" title="32">{
                 return false
         }</span>
-        <span class="cov8" title="4428">for i := 0; i &lt; len(name); i++ </span><span class="cov9" title="20281">{
+        <span class="cov8" title="4514">for i := 0; i &lt; len(name); i++ </span><span class="cov9" title="19866">{
                 c := name[i]
                 switch </span>{
                 case c &gt;= 'a' &amp;&amp; c &lt;= 'z',
                         c &gt;= 'A' &amp;&amp; c &lt;= 'Z',
-                        c &gt;= '0' &amp;&amp; c &lt;= '9':<span class="cov9" title="16021">
+                        c &gt;= '0' &amp;&amp; c &lt;= '9':<span class="cov9" title="15922">
                         continue</span>
                 }
-                <span class="cov8" title="4260">switch c </span>{
+                <span class="cov8" title="3944">switch c </span>{
                 case '!', '#', '$', '%', '&amp;', '\'', '*', '+', '-', '.',
-                        '^', '_', '`', '|', '~':<span class="cov8" title="4248">
+                        '^', '_', '`', '|', '~':<span class="cov8" title="3932">
                         continue</span>
                 }
                 <span class="cov3" title="12">return false</span>
         }
-        <span class="cov8" title="4416">return true</span>
+        <span class="cov8" title="4502">return true</span>
 }
 
 // hasForbiddenFieldValueByte reports whether v contains any octet forbidden
@@ -1951,36 +1951,36 @@ func isValidFieldName(name string) bool <span class="cov8" title="4460">{
 // control characters (0x00-0x08, 0x0A-0x1F). HTAB (0x09) is permitted.
 // obs-text (0x80-0xFF) is also permitted because senders MAY emit it and
 // recipients SHOULD pass it through.
-func hasForbiddenFieldValueByte(v string) bool <span class="cov8" title="8436">{
-        for i := 0; i &lt; len(v); i++ </span><span class="cov10" title="31686">{
+func hasForbiddenFieldValueByte(v string) bool <span class="cov8" title="8437">{
+        for i := 0; i &lt; len(v); i++ </span><span class="cov10" title="30112">{
                 c := v[i]
-                if c == '\t' </span><span class="cov6" title="650">{
+                if c == '\t' </span><span class="cov6" title="648">{
                         continue</span>
                 }
-                <span class="cov9" title="31036">if c &lt; 0x20 || c == 0x7F </span><span class="cov2" title="7">{
+                <span class="cov9" title="29464">if c &lt; 0x20 || c == 0x7F </span><span class="cov2" title="7">{
                         return true
                 }</span>
         }
-        <span class="cov8" title="8429">return false</span>
+        <span class="cov8" title="8430">return false</span>
 }
 
 // validateResponseContentLength checks the upstream response for invalid
 // Content-Length values per RFC 9112 §6.1. It returns a non-nil *proxyError
 // when the response must be rejected with 502.
-func validateResponseContentLength(resp *http.Response) *proxyError <span class="cov6" title="345">{
+func validateResponseContentLength(resp *http.Response) *proxyError <span class="cov6" title="343">{
         // Collect all individual values; headers may be comma-separated per
         // RFC 9110 §5.6.1. Compare numerically so that semantically equal
         // values like "042" and "42" are not rejected.
         var first uint64
         var seen bool
-        for _, v := range resp.Header[headerContentLength] </span><span class="cov6" title="934">{
-                for part := range strings.SplitSeq(v, ",") </span><span class="cov7" title="1256">{
+        for _, v := range resp.Header[headerContentLength] </span><span class="cov6" title="933">{
+                for part := range strings.SplitSeq(v, ",") </span><span class="cov7" title="1253">{
                         part = strings.TrimSpace(part)
-                        if part == "" </span><span class="cov6" title="667">{
+                        if part == "" </span><span class="cov6" title="665">{
                                 continue</span>
                         }
-                        <span class="cov6" title="589">n, err := strconv.ParseUint(part, 10, 64)
-                        if err != nil </span><span class="cov4" title="54">{
+                        <span class="cov6" title="588">n, err := strconv.ParseUint(part, 10, 64)
+                        if err != nil </span><span class="cov4" title="53">{
                                 return errInvalidContentLength
                         }</span>
                         <span class="cov6" title="535">if !seen </span><span class="cov4" title="59">{
@@ -1991,7 +1991,7 @@ func validateResponseContentLength(resp *http.Response) *proxyError <span class=
                         }</span>
                 }
         }
-        <span class="cov5" title="287">return nil</span>
+        <span class="cov5" title="286">return nil</span>
 }
 
 // errContentLengthInvalid is a sentinel error returned by readUpstreamResponse
