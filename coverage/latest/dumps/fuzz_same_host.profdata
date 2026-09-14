@@ -146,8 +146,8 @@ mode: atomic
 /github/workspace/build-out/src/spnego-proxy/internal/proxy/dial.go:70.8,72.3 1 0
 /github/workspace/build-out/src/spnego-proxy/internal/proxy/dial.go:73.2,75.52 2 0
 /github/workspace/build-out/src/spnego-proxy/internal/proxy/direct.go:17.44,18.66 1 1742
-/github/workspace/build-out/src/spnego-proxy/internal/proxy/direct.go:18.66,20.3 1 30
-/github/workspace/build-out/src/spnego-proxy/internal/proxy/direct.go:21.2,21.13 1 1712
+/github/workspace/build-out/src/spnego-proxy/internal/proxy/direct.go:18.66,20.3 1 36
+/github/workspace/build-out/src/spnego-proxy/internal/proxy/direct.go:21.2,21.13 1 1706
 /github/workspace/build-out/src/spnego-proxy/internal/proxy/direct.go:29.46,30.33 1 930
 /github/workspace/build-out/src/spnego-proxy/internal/proxy/direct.go:30.33,33.17 3 1860
 /github/workspace/build-out/src/spnego-proxy/internal/proxy/direct.go:33.17,38.4 3 1742
