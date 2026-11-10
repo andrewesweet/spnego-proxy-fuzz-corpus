@@ -124,7 +124,7 @@ mode: atomic
 /github/workspace/build-out/src/spnego-proxy/internal/proxy/config.go:37.2,37.12 1 0
 /github/workspace/build-out/src/spnego-proxy/internal/proxy/config.go:82.2,83.45 2 196
 /github/workspace/build-out/src/spnego-proxy/internal/proxy/config.go:84.3,84.49 1 2628
-/github/workspace/build-out/src/spnego-proxy/internal/proxy/config.go:85.4,86.1 1 2172
+/github/workspace/build-out/src/spnego-proxy/internal/proxy/config.go:85.4,86.1 1 2171
 /github/workspace/build-out/src/spnego-proxy/internal/proxy/config.go:88.2,88.12 1 196
 /github/workspace/build-out/src/spnego-proxy/internal/proxy/config.go:94.2,95.36 2 0
 /github/workspace/build-out/src/spnego-proxy/internal/proxy/config.go:96.3,96.35 1 0
@@ -146,7 +146,7 @@ mode: atomic
 /github/workspace/build-out/src/spnego-proxy/internal/proxy/config.go:131.4,132.1 1 0
 /github/workspace/build-out/src/spnego-proxy/internal/proxy/config.go:134.2,134.14 1 0
 /github/workspace/build-out/src/spnego-proxy/internal/proxy/config.go:140.2,140.89 1 196
-/github/workspace/build-out/src/spnego-proxy/internal/proxy/config.go:140.91,140.137 1 2169
+/github/workspace/build-out/src/spnego-proxy/internal/proxy/config.go:140.91,140.137 1 2168
 /github/workspace/build-out/src/spnego-proxy/internal/proxy/connect.go:19.2,19.39 1 0
 /github/workspace/build-out/src/spnego-proxy/internal/proxy/connect.go:20.3,22.1 2 0
 /github/workspace/build-out/src/spnego-proxy/internal/proxy/connect.go:29.2,29.58 1 0
