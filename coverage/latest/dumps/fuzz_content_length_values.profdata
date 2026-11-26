@@ -549,7 +549,7 @@ mode: atomic
 /github/workspace/build-out/src/spnego-proxy/internal/proxy/response.go:97.4,98.1 1 0
 /github/workspace/build-out/src/spnego-proxy/internal/proxy/response.go:100.2,100.14 1 0
 /github/workspace/build-out/src/spnego-proxy/internal/proxy/response.go:110.2,112.53 3 141
-/github/workspace/build-out/src/spnego-proxy/internal/proxy/response.go:113.3,113.46 1 925
+/github/workspace/build-out/src/spnego-proxy/internal/proxy/response.go:113.3,113.46 1 924
 /github/workspace/build-out/src/spnego-proxy/internal/proxy/response.go:114.4,115.18 2 1241
 /github/workspace/build-out/src/spnego-proxy/internal/proxy/response.go:116.5,116.13 1 662
 /github/workspace/build-out/src/spnego-proxy/internal/proxy/response.go:118.4,119.18 2 579
